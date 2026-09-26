@@ -2,6 +2,13 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getOrders } from '../../actions/orderActions';
 
+const STATUS_BADGE = {
+  paid: 'bg-success',
+  processing: 'bg-warning text-dark',
+  refunded: 'bg-secondary',
+  failed: 'bg-danger'
+};
+
 const OrderHistory = () => {
   const dispatch = useDispatch();
   const { orders, loading } = useSelector(state => state.orders);
@@ -25,7 +32,7 @@ const OrderHistory = () => {
                 <span className="text-muted">
                   {new Date(order.createdAt).toLocaleString()}
                 </span>
-                <span className={`badge ${order.status === 'paid' ? 'bg-success' : 'bg-danger'}`}>
+                <span className={`badge ${STATUS_BADGE[order.status] || 'bg-secondary'}`}>
                   {order.status}
                 </span>
               </div>

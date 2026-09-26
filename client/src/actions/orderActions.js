@@ -1,14 +1,17 @@
 import axios from 'axios';
 import { GET_ORDERS_SUCCESS, ADD_ORDER_SUCCESS, GET_ERRORS } from './types';
 
-export const createPaymentIntent = async (amountInCents) => {
-  const res = await axios.post('/api/payment/create-payment-intent', { amount: amountInCents });
-  return res.data.clientSecret;
+// The server prices the cart itself; we only send what we want and how many.
+export const createPaymentIntent = async (cartItems) => {
+  const items = cartItems.map(i => ({ productId: i.productId, quantity: i.quantity }));
+  const res = await axios.post('/api/payment/create-payment-intent', { items });
+  return res.data; // { clientSecret, orderId, subtotal, shipping, total }
 };
 
-export const placeOrder = (orderData) => async dispatch => {
+// Asks the server to verify the payment with Stripe and finalize the order.
+export const confirmOrder = (orderId) => async dispatch => {
   try {
-    const res = await axios.post('/api/orders', orderData);
+    const res = await axios.post(`/api/orders/${orderId}/confirm`);
     dispatch({ type: ADD_ORDER_SUCCESS, payload: res.data });
     return res.data;
   } catch (err) {
