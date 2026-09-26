@@ -1,10 +1,15 @@
 # Voltra
 
-A full-stack electronics marketplace built with MongoDB, Express, React, and Node — TypeScript on the backend, a `framer-motion`-animated frontend, and a real Stripe test-mode checkout.
+A Canadian marketplace for pre-owned medical equipment, built with MongoDB, Express, React, and Node — TypeScript on the backend, a `framer-motion`-animated frontend, and a Stripe test-mode checkout in CAD.
+
+Clinics, hospitals, equipment dealers and biomedical service companies list equipment on behalf of their organization. Every listing carries the Health Canada device class, condition, usage hours and service/calibration history.
 
 ## Features
 
-- Product catalog with categories, product detail pages, and reviews
+- **Organizations:** users buy and sell on behalf of a clinic, hospital, dealer or biomedical service provider (province, city, Health Canada MDEL number). Organizations start `unverified`; owners cannot change their own verification status
+- **Medical listings:** manufacturer, model, year, Health Canada device class (I–IV), MDL number, condition, usage hours, last service/calibration dates and a service history. Only Class I and II devices are accepted for now; Class III/IV are refused server-side until seller verification exists
+- Browse and filter by category, device class, condition and province; listings show the seller organization and its verification status
+- Product detail pages with a specification table, service history, and reviews
 - JWT-based authentication (register/login)
 - Client-side cart persisted to `localStorage`
 - Checkout via Stripe (test/sandbox mode) using Stripe Elements
@@ -43,7 +48,7 @@ Copy the placeholders in `.env` (backend, project root) and `client/.env` (front
 npm run seed
 ```
 
-Inserts 4 categories and 15 sample products (with placeholder images) into MongoDB.
+Inserts 7 medical-equipment categories, 4 organizations and 12 listings with real photos from Unsplash. All organizations, manufacturers and models in the seed data are fictional.
 
 ### 4. Run
 
@@ -59,7 +64,7 @@ To run the compiled production build instead: `npm run build` (emits to `dist/`)
 
 ### 5. Try the checkout flow
 
-Register/log in, add a few products to the cart, and pay with the Stripe test card:
+Register/log in, add some equipment to the cart, and pay with the Stripe test card. To sell, create an organization under **My Organization** first.
 
 ```
 4242 4242 4242 4242 — any future expiry date — any CVC
@@ -70,9 +75,10 @@ Register/log in, add a few products to the cart, and pay with the Stripe test ca
 ```
 ├── app.ts            Express app (routes, middleware) — no listen()
 ├── server.ts         Entry point: imports app, calls app.listen()
-├── models/           Mongoose schemas + TS interfaces (User, Product, Category, Review, Order)
-├── routes/           Express routes (auth, products, categories, reviews, payment, webhook, orders)
+├── models/           Mongoose schemas + TS interfaces (User, Organization, Product, Category, Review, Order)
+├── routes/           Express routes (auth, organizations, products, categories, reviews, payment, webhook, orders)
 ├── services/         Checkout logic (server-side pricing, order finalization) and the Stripe client
+├── config/           Env-backed keys and medical domain constants (provinces, device classes, conditions)
 ├── middleware/       JWT auth middleware
 ├── types/            Shared TS type declarations (Express Request augmentation)
 ├── seed/             Sample data seeding script

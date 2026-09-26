@@ -18,10 +18,11 @@ export default function cartReducer(state = initialState, action) {
     case ADD_TO_CART: {
       const { product, quantity } = action.payload;
       const existing = state.items.find(i => i.productId === product._id);
+      const cap = qty => Math.min(qty, product.stock);
       let items;
       if (existing) {
         items = state.items.map(i =>
-          i.productId === product._id ? { ...i, quantity: i.quantity + quantity } : i
+          i.productId === product._id ? { ...i, stock: product.stock, quantity: cap(i.quantity + quantity) } : i
         );
       } else {
         items = [
@@ -31,7 +32,8 @@ export default function cartReducer(state = initialState, action) {
             title: product.title,
             price: product.price,
             imageUrl: product.imageUrl,
-            quantity
+            stock: product.stock,
+            quantity: cap(quantity)
           }
         ];
       }
@@ -44,7 +46,7 @@ export default function cartReducer(state = initialState, action) {
         ...state,
         items: state.items.map(i =>
           i.productId === action.payload.productId
-            ? { ...i, quantity: Math.max(1, action.payload.quantity) }
+            ? { ...i, quantity: Math.max(1, Math.min(action.payload.quantity, i.stock ?? Infinity)) }
             : i
         )
       };

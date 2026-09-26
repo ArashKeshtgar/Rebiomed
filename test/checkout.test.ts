@@ -18,7 +18,13 @@ const makeProduct = (price: number, stock: number) => Product.create({
   stock,
   imageUrl: 'x.png',
   category: new Types.ObjectId(),
-  seller: new Types.ObjectId()
+  seller: new Types.ObjectId(),
+  organization: new Types.ObjectId(),
+  manufacturer: 'Test Medical',
+  deviceModel: 'T-100',
+  deviceClass: 'II',
+  condition: 'used_good',
+  location: { province: 'ON', city: 'Toronto' }
 });
 
 const expectCheckoutError = async (p: Promise<unknown>, status: number) => {
@@ -80,7 +86,7 @@ describe('Checkout', () => {
       const order = await createPendingOrder(userId, cart);
       order.stripePaymentIntentId = `pi_${order.id}`;
       await order.save();
-      const pi = { id: order.stripePaymentIntentId, status: 'succeeded', amount: order.totalCents, currency: 'usd' };
+      const pi = { id: order.stripePaymentIntentId, status: 'succeeded', amount: order.totalCents, currency: 'cad' };
       return { product, order, pi };
     };
 
@@ -143,7 +149,7 @@ describe('Checkout', () => {
       const refunded: string[] = [];
       const result = await finalizeOrder(
         order.id,
-        { id: 'pi_soldout', status: 'succeeded', amount: order.totalCents, currency: 'usd' },
+        { id: 'pi_soldout', status: 'succeeded', amount: order.totalCents, currency: 'cad' },
         async id => { refunded.push(id); }
       );
 

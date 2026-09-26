@@ -8,11 +8,12 @@ import {
   GET_ERRORS
 } from './types';
 
-export const getProducts = (category) => async dispatch => {
+// filters: { category, deviceClass, condition, province } — empty values are ignored
+export const getProducts = (filters = {}) => async dispatch => {
   dispatch({ type: PRODUCTS_LOADING });
   try {
-    const url = category ? `/api/products?category=${category}` : '/api/products';
-    const res = await axios.get(url);
+    const params = Object.fromEntries(Object.entries(filters).filter(([, v]) => v));
+    const res = await axios.get('/api/products', { params });
     dispatch({ type: GET_PRODUCTS_SUCCESS, payload: res.data });
   } catch (err) {
     dispatch({ type: GET_ERRORS, payload: err.response ? err.response.data : {} });

@@ -2,8 +2,10 @@ import { Types } from 'mongoose';
 import Order, { IOrder, IOrderItem } from '../models/Order';
 import Product from '../models/Product';
 
-export const CURRENCY = 'usd';
-export const SHIPPING_CENTS = 499;
+export const CURRENCY = 'cad';
+// Medical equipment ships by freight arranged between buyer and seller, so the
+// platform does not add a shipping charge.
+export const SHIPPING_CENTS = 0;
 
 export class CheckoutError extends Error {
   constructor(message: string, public status = 400) {

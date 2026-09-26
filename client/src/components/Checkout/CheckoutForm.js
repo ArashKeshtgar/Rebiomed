@@ -11,6 +11,7 @@ import {
 import { motion } from 'framer-motion';
 import { createPaymentIntent, confirmOrder } from '../../actions/orderActions';
 import { clearCart } from '../../actions/cartActions';
+import { formatPrice } from '../../utils/medical';
 
 const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY)
@@ -84,7 +85,7 @@ const PayForm = ({ orderId, total, onSuccess }) => {
         whileTap={{ scale: 0.97 }}
         disabled={!stripe || processing}
       >
-        {processing ? 'Processing...' : `Pay $${total.toFixed(2)}`}
+        {processing ? 'Processing...' : `Pay ${formatPrice(total)}`}
       </motion.button>
       <p className="text-muted small mt-2">
         Test card: 4242 4242 4242 4242, any future date, any CVC.
@@ -144,16 +145,16 @@ const CheckoutForm = () => {
           <div className="card-body">
             <div className="d-flex justify-content-between">
               <span>Subtotal</span>
-              <span>${checkout.subtotal.toFixed(2)}</span>
+              <span>{formatPrice(checkout.subtotal)}</span>
             </div>
             <div className="d-flex justify-content-between text-muted">
-              <span>Shipping</span>
-              <span>${checkout.shipping.toFixed(2)}</span>
+              <span>Freight</span>
+              <span>{checkout.shipping ? formatPrice(checkout.shipping) : 'Arranged with seller'}</span>
             </div>
             <hr />
             <div className="d-flex justify-content-between">
               <strong>Total</strong>
-              <strong>${checkout.total.toFixed(2)}</strong>
+              <strong>{formatPrice(checkout.total)}</strong>
             </div>
           </div>
         </div>

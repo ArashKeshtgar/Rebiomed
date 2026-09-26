@@ -11,6 +11,7 @@ import reviewRoutes from './routes/reviews';
 import paymentRoutes from './routes/payment';
 import orderRoutes from './routes/orders';
 import webhookRoutes from './routes/webhook';
+import organizationRoutes from './routes/organizations';
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/organizations', organizationRoutes);
 
 export default app;

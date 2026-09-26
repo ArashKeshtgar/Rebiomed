@@ -38,7 +38,7 @@ const Navbar = () => {
         <div className={`navbar-collapse w-100 d-lg-flex ${menuOpen ? 'd-flex flex-column' : 'd-none'}`}>
               <ul className="navbar-nav me-auto mt-2 mt-lg-0">
                 <li className="nav-item">
-                  <Link className="nav-link" to="/products" onClick={closeMenu}>Products</Link>
+                  <Link className="nav-link" to="/products" onClick={closeMenu}>Equipment</Link>
                 </li>
                 {isAuthenticated && (
                   <>
@@ -46,10 +46,13 @@ const Navbar = () => {
                       <Link className="nav-link" to="/orders" onClick={closeMenu}>My Orders</Link>
                     </li>
                     <li className="nav-item">
-                      <Link className="nav-link" to="/sell" onClick={closeMenu}>Sell a Product</Link>
+                      <Link className="nav-link" to="/sell" onClick={closeMenu}>Sell Equipment</Link>
                     </li>
                     <li className="nav-item">
                       <Link className="nav-link" to="/my-listings" onClick={closeMenu}>My Listings</Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/organization" onClick={closeMenu}>My Organization</Link>
                     </li>
                   </>
                 )}

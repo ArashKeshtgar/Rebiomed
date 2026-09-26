@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getOrders } from '../../actions/orderActions';
+import { formatPrice } from '../../utils/medical';
 
 const STATUS_BADGE = {
   paid: 'bg-success',
@@ -39,11 +40,11 @@ const OrderHistory = () => {
               <ul className="list-unstyled mt-2 mb-2">
                 {order.items.map((item, idx) => (
                   <li key={idx}>
-                    {item.title} × {item.quantity} — ${(item.price * item.quantity).toFixed(2)}
+                    {item.title} × {item.quantity} — {formatPrice(item.price * item.quantity)}
                   </li>
                 ))}
               </ul>
-              <strong>Total: ${order.total.toFixed(2)}</strong>
+              <strong>Total: {formatPrice(order.total)}</strong>
             </div>
           </div>
         ))

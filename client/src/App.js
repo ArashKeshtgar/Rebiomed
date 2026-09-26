@@ -15,6 +15,7 @@ import ProductList from './components/Products/ProductList';
 import ProductDetail from './components/Products/ProductDetail';
 import SellProduct from './components/Products/SellProduct';
 import MyListings from './components/Products/MyListings';
+import OrganizationProfile from './components/Organization/OrganizationProfile';
 import CartPage from './components/Cart/CartPage';
 import CheckoutForm from './components/Checkout/CheckoutForm';
 import OrderHistory from './components/Orders/OrderHistory';
@@ -76,6 +77,14 @@ const AppRoutes = () => (
         element={
           <PrivateRoute>
             <MyListings />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/organization"
+        element={
+          <PrivateRoute>
+            <OrganizationProfile />
           </PrivateRoute>
         }
       />

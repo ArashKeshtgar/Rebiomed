@@ -85,13 +85,14 @@ const Home = () => (
       animate={{ opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.8 }}
     >
-      Your marketplace for the latest electronics — headphones, smart watches, gaming
-      gear and more. Browse, buy, and even sell your own gadgets, with a secure
-      Stripe-powered checkout.
+      Canada's marketplace for pre-owned medical equipment. Clinics, hospitals and
+      dealers list patient monitors, dental units, lab and rehab equipment, with the
+      Health Canada device class and service history on every listing.
+      Payments are handled securely through Stripe.
     </motion.p>
     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
       <Link to="/products" className="btn btn-light btn-lg px-4 shadow">
-        Shop Electronics
+        Browse Equipment
       </Link>
     </motion.div>
   </div>

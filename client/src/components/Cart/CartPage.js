@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { removeFromCart, updateCartQty } from '../../actions/cartActions';
+import { formatPrice } from '../../utils/medical';
 
 const CartPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const items = useSelector(state => state.cart.items);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const shipping = items.length ? 4.99 : 0;
-  const total = subtotal + shipping;
+  const total = subtotal;
 
   if (!items.length) {
     return (
@@ -18,7 +18,7 @@ const CartPage = () => {
         <div style={{ fontSize: '4rem' }}>🛒</div>
         <h1 className="mt-3">Your cart is empty</h1>
         <p className="text-muted mb-4">Looks like you haven't added anything yet.</p>
-        <Link to="/products" className="btn btn-primary btn-lg">Browse Products</Link>
+        <Link to="/products" className="btn btn-primary btn-lg">Browse Equipment</Link>
       </div>
     );
   }
@@ -47,7 +47,7 @@ const CartPage = () => {
                   />
                   <div className="flex-grow-1">
                     <h6 className="mb-1">{item.title}</h6>
-                    <span className="text-muted">${item.price.toFixed(2)} each</span>
+                    <span className="text-muted">{formatPrice(item.price)} each</span>
                   </div>
                   <div className="d-flex align-items-center border rounded mx-3">
                     <button
@@ -60,12 +60,13 @@ const CartPage = () => {
                     <button
                       className="btn btn-sm"
                       onClick={() => dispatch(updateCartQty(item.productId, item.quantity + 1))}
+                      disabled={item.stock !== undefined && item.quantity >= item.stock}
                     >
                       +
                     </button>
                   </div>
-                  <strong className="me-3" style={{ width: 70, textAlign: 'right' }}>
-                    ${(item.price * item.quantity).toFixed(2)}
+                  <strong className="me-3" style={{ minWidth: 110, textAlign: 'right' }}>
+                    {formatPrice(item.price * item.quantity)}
                   </strong>
                   <button
                     className="btn btn-sm btn-outline-danger"
@@ -86,16 +87,16 @@ const CartPage = () => {
               <h5 className="card-title mb-3">Order Summary</h5>
               <div className="d-flex justify-content-between mb-2">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="d-flex justify-content-between mb-2 text-muted">
-                <span>Shipping</span>
-                <span>${shipping.toFixed(2)}</span>
+                <span>Freight</span>
+                <span>Arranged with seller</span>
               </div>
               <hr />
               <div className="d-flex justify-content-between mb-3">
                 <strong>Total</strong>
-                <strong>${total.toFixed(2)}</strong>
+                <strong>{formatPrice(total)}</strong>
               </div>
               <motion.button
                 className="btn btn-success btn-lg w-100"

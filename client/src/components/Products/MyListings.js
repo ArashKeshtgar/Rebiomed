@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { getMyProducts, deleteProduct } from '../../actions/productActions';
+import { formatPrice } from '../../utils/medical';
 
 const MyListings = () => {
   const dispatch = useDispatch();
@@ -22,7 +23,7 @@ const MyListings = () => {
       {loading ? (
         <p>Loading...</p>
       ) : !myProducts.length ? (
-        <p className="text-muted">You haven't listed any products yet.</p>
+        <p className="text-muted">You haven't listed any equipment yet.</p>
       ) : (
         <div className="row g-4">
           {myProducts.map((product, i) => (
@@ -43,7 +44,7 @@ const MyListings = () => {
                 <div className="card-body d-flex flex-column">
                   <h6 className="card-title">{product.title}</h6>
                   <p className="text-muted small mb-1">{product.category?.name}</p>
-                  <strong className="mb-3">${product.price.toFixed(2)}</strong>
+                  <strong className="mb-3">{formatPrice(product.price)}</strong>
                   <div className="mt-auto d-flex gap-2">
                     <Link to={`/products/${product._id}`} className="btn btn-sm btn-outline-secondary flex-grow-1">
                       View

@@ -4,42 +4,155 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import connectDB from '../db';
 import Category, { ICategory } from '../models/Category';
+import Organization, { IOrganization } from '../models/Organization';
 import Product from '../models/Product';
 import User from '../models/User';
+import { Condition, DeviceClass, OrganizationType, Province, ServiceType } from '../config/medical';
 
-type CategoryName = 'Electronics' | 'Apparel' | 'Home & Kitchen' | 'Books';
+// All organizations, manufacturers and models below are FICTIONAL demo data.
 
-const categoryNames: CategoryName[] = ['Electronics', 'Apparel', 'Home & Kitchen', 'Books'];
+const categoryNames = [
+  'Patient Monitoring',
+  'Diagnostic Imaging',
+  'Dental',
+  'Laboratory',
+  'Beds & Patient Handling',
+  'Rehabilitation & Mobility',
+  'Surgical Instruments'
+] as const;
+type CategoryName = typeof categoryNames[number];
 
-// Real, relevant photos from Unsplash's CDN (no API key needed for direct
-// image delivery), one hand-picked per product — not a random/generic feed.
+// Real, relevant photos from Unsplash's CDN (free license), one hand-picked per listing.
 const img = (id: string): string => `https://images.unsplash.com/photo-${id}?w=600&h=600&fit=crop&q=80`;
 
-interface SeedProduct {
+interface SeedOrg {
+  key: string;
+  name: string;
+  type: OrganizationType;
+  province: Province;
+  city: string;
+  mdelNumber?: string;
+}
+
+const orgs: SeedOrg[] = [
+  { key: 'dealer', name: 'Harbourline Medical Equipment (demo)', type: 'dealer', province: 'BC', city: 'Vancouver', mdelNumber: 'DEMO-0001' },
+  { key: 'clinic', name: 'Maple Grove Family Clinic (demo)', type: 'clinic', province: 'ON', city: 'Toronto' },
+  { key: 'dental', name: 'Prairie Smiles Dental (demo)', type: 'clinic', province: 'AB', city: 'Calgary' },
+  { key: 'service', name: 'Northstar Biomedical Services (demo)', type: 'service_provider', province: 'QC', city: 'Montreal' }
+];
+
+interface SeedListing {
+  org: string;
   title: string;
   description: string;
   price: number;
   category: CategoryName;
-  stock: number;
   image: string;
+  manufacturer: string;
+  deviceModel: string;
+  yearOfManufacture: number;
+  deviceClass: DeviceClass;
+  condition: Condition;
+  usageHours?: number;
+  lastServiceDate?: string;
+  lastCalibrationDate?: string;
+  serviceHistory?: { date: string; type: ServiceType; performedBy: string }[];
 }
 
-const products: SeedProduct[] = [
-  { title: 'Wireless Noise-Cancelling Headphones', description: 'Over-ear Bluetooth headphones with 30-hour battery life and active noise cancellation.', price: 129.99, category: 'Electronics', stock: 50, image: img('1505740420928-5e560c06d30e') },
-  { title: 'Smart Fitness Watch', description: 'Tracks heart rate, sleep, and workouts with a 7-day battery.', price: 89.5, category: 'Electronics', stock: 40, image: img('1508685096489-7aacd43bd3b1') },
-  { title: 'Portable Bluetooth Speaker', description: 'Waterproof speaker with 360-degree sound and 12-hour playtime.', price: 45.0, category: 'Electronics', stock: 60, image: img('1608043152269-423dbba4e7e1') },
-  { title: '4K Action Camera', description: 'Compact action camera with image stabilization and a waterproof case.', price: 159.99, category: 'Electronics', stock: 25, image: img('1484506399805-c273b8e91dce') },
-  { title: 'Mechanical Gaming Keyboard', description: 'RGB backlit mechanical keyboard with hot-swappable switches.', price: 79.99, category: 'Electronics', stock: 45, image: img('1538481199705-c710c4e965fc') },
-  { title: 'Wireless Gaming Mouse', description: 'Lightweight wireless mouse with a 20,000 DPI optical sensor.', price: 49.99, category: 'Electronics', stock: 55, image: img('1605773527852-c546a8584ea3') },
-  { title: '27" 4K Monitor', description: 'Ultra HD IPS monitor with HDR support, ideal for work and gaming.', price: 329.99, category: 'Electronics', stock: 20, image: img('1527443224154-c4a3942d3acf') },
-  { title: 'USB-C Fast Charger 65W', description: 'Compact GaN charger that fast-charges laptops, tablets, and phones.', price: 24.99, category: 'Electronics', stock: 100, image: img('1557767382-97b28f5488e7') },
-  { title: 'True Wireless Earbuds', description: 'In-ear earbuds with active noise cancellation and a charging case.', price: 59.99, category: 'Electronics', stock: 70, image: img('1572569511254-d8f925fe2cbb') },
-  { title: 'Smart Home Security Camera', description: '1080p Wi-Fi camera with night vision and motion alerts.', price: 69.99, category: 'Electronics', stock: 35, image: img('1618482914248-29272d021005') },
-  { title: 'Portable Power Bank 20000mAh', description: 'High-capacity power bank with fast charging for phones and tablets.', price: 34.99, category: 'Electronics', stock: 80, image: img('1585995603413-eb35b5f4a50b') },
-  { title: 'Classic Cotton T-Shirt', description: 'Soft, breathable 100% cotton t-shirt available in multiple colors.', price: 19.99, category: 'Apparel', stock: 200, image: img('1576417677416-6ca3adfb5435') },
-  { title: 'Running Sneakers', description: 'Lightweight running shoes with a breathable mesh upper.', price: 74.99, category: 'Apparel', stock: 90, image: img('1542291026-7eec264c27ff') },
-  { title: 'Stainless Steel French Press', description: '34oz French press for rich, full-flavored coffee.', price: 29.99, category: 'Home & Kitchen', stock: 55, image: img('1639906512494-dd4a536abc4e') },
-  { title: 'Atomic Habits', description: 'A practical guide to building good habits and breaking bad ones.', price: 16.99, category: 'Books', stock: 100, image: img('1517849325426-6eac321919a0') }
+const pm = (date: string, performedBy = 'Northstar Biomedical Services (demo)') =>
+  ({ date, type: 'preventive_maintenance' as const, performedBy });
+const cal = (date: string, performedBy = 'Northstar Biomedical Services (demo)') =>
+  ({ date, type: 'calibration' as const, performedBy });
+
+const listings: SeedListing[] = [
+  {
+    org: 'dealer', title: 'Vital Signs Monitor with SpO2 and NIBP', category: 'Patient Monitoring',
+    description: 'Spot-check and continuous monitor: SpO2, non-invasive blood pressure and temperature. Includes adult cuff set and roll stand.',
+    price: 1850, image: img('1513224502586-d1e602410265'),
+    manufacturer: 'Aurelian Medical', deviceModel: 'VS-300', yearOfManufacture: 2020, deviceClass: 'II',
+    condition: 'refurbished', usageHours: 6200, lastServiceDate: '2026-06-12', lastCalibrationDate: '2026-06-12',
+    serviceHistory: [pm('2025-06-10'), cal('2026-06-12')]
+  },
+  {
+    org: 'clinic', title: '12" Bedside Patient Monitor', category: 'Patient Monitoring',
+    description: '5-lead ECG, SpO2, NIBP and respiration. Wall-mount bracket included. Retired after a clinic upgrade, fully working.',
+    price: 2400, image: img('1682706841297-5524ba1faa9c'),
+    manufacturer: 'Aurelian Medical', deviceModel: 'BM-12', yearOfManufacture: 2019, deviceClass: 'II',
+    condition: 'used_good', usageHours: 14800, lastServiceDate: '2025-11-03', lastCalibrationDate: '2025-11-03',
+    serviceHistory: [pm('2024-11-01'), cal('2025-11-03')]
+  },
+  {
+    org: 'dealer', title: 'Portable Ultrasound System with Two Probes', category: 'Diagnostic Imaging',
+    description: 'Cart-based ultrasound with convex and linear probes, B/M mode and colour Doppler. Probes inspected, no delamination.',
+    price: 14500, image: img('1691935071222-c008a4ccc2ca'),
+    manufacturer: 'Kestrel Diagnostics', deviceModel: 'Sonara C5', yearOfManufacture: 2021, deviceClass: 'II',
+    condition: 'used_excellent', usageHours: 3100, lastServiceDate: '2026-04-20',
+    serviceHistory: [{ date: '2026-04-20', type: 'inspection', performedBy: 'Northstar Biomedical Services (demo)' }]
+  },
+  {
+    org: 'dental', title: 'Dental Treatment Unit with Delivery System', category: 'Dental',
+    description: 'Patient chair, over-the-patient delivery, LED operatory light and assistant instrumentation. Upholstery in very good shape.',
+    price: 9800, image: img('1629909613654-28e377c37b09'),
+    manufacturer: 'Cedarline Dental', deviceModel: 'Operatory 5', yearOfManufacture: 2018, deviceClass: 'I',
+    condition: 'used_good', lastServiceDate: '2026-02-14', serviceHistory: [pm('2026-02-14')]
+  },
+  {
+    org: 'dealer', title: 'Refurbished Dental Patient Chair', category: 'Dental',
+    description: 'Fully refurbished hydraulic chair, new upholstery, 90-day dealer warranty.',
+    price: 5200, image: img('1728342057953-94bfad8f0e7e'),
+    manufacturer: 'Cedarline Dental', deviceModel: 'Comfort 300', yearOfManufacture: 2017, deviceClass: 'I',
+    condition: 'refurbished', lastServiceDate: '2026-07-01', serviceHistory: [pm('2026-07-01', 'Harbourline Medical Equipment (demo)')]
+  },
+  {
+    org: 'service', title: 'Binocular Laboratory Microscope', category: 'Laboratory',
+    description: '4x/10x/40x/100x oil objectives, LED illumination, mechanical stage. Optics cleaned and aligned.',
+    price: 950, image: img('1526930382372-67bf22c0fce2'),
+    manufacturer: 'Harbour Optics', deviceModel: 'LM-400', yearOfManufacture: 2019, deviceClass: 'I',
+    condition: 'used_excellent', lastServiceDate: '2026-05-05', serviceHistory: [pm('2026-05-05')]
+  },
+  {
+    org: 'clinic', title: 'Benchtop Clinical Centrifuge', category: 'Laboratory',
+    description: '24-place rotor, up to 4,000 RPM, imbalance detection and lid lock. Speed verified with a tachometer.',
+    price: 1100, image: img('1748278739348-d9886621530f'),
+    manufacturer: 'Harbour Lab Systems', deviceModel: 'CX-24', yearOfManufacture: 2020, deviceClass: 'I',
+    condition: 'used_good', lastCalibrationDate: '2026-03-18', serviceHistory: [cal('2026-03-18')]
+  },
+  {
+    org: 'dealer', title: 'Electric Hospital Bed, 3-Motor', category: 'Beds & Patient Handling',
+    description: 'Height, back and knee adjustment, full side rails, pendant control and mattress. Motors and hand control tested.',
+    price: 2100, image: img('1628372095387-017d1099fc19'),
+    manufacturer: 'Tamarack Care', deviceModel: 'EB-3', yearOfManufacture: 2019, deviceClass: 'II',
+    condition: 'refurbished', lastServiceDate: '2026-06-30', serviceHistory: [pm('2026-06-30', 'Harbourline Medical Equipment (demo)')]
+  },
+  {
+    org: 'clinic', title: 'Manual Hospital Bed with Mattress', category: 'Beds & Patient Handling',
+    description: 'Two-crank manual bed with locking casters and half rails. Light cosmetic wear.',
+    price: 650, image: img('1611587266737-cc128ffe2946'),
+    manufacturer: 'Tamarack Care', deviceModel: 'MB-2', yearOfManufacture: 2016, deviceClass: 'I',
+    condition: 'used_fair'
+  },
+  {
+    org: 'service', title: 'Lightweight Folding Wheelchair', category: 'Rehabilitation & Mobility',
+    description: '18" seat, flip-back arms, swing-away footrests. Tires and brakes checked.',
+    price: 280, image: img('1619618691037-751d1e6c9ad1'),
+    manufacturer: 'Tamarack Mobility', deviceModel: 'Fold 18', yearOfManufacture: 2022, deviceClass: 'I',
+    condition: 'used_excellent'
+  },
+  {
+    org: 'clinic', title: 'Physiotherapy Treatment Table', category: 'Rehabilitation & Mobility',
+    description: 'Electric height-adjustable treatment table with face hole and adjustable backrest.',
+    price: 1350, image: img('1630226040750-d934f017f0e4'),
+    manufacturer: 'Summit Rehab', deviceModel: 'TT-2', yearOfManufacture: 2021, deviceClass: 'I',
+    condition: 'used_good'
+  },
+  {
+    org: 'dealer', title: 'General Surgery Instrument Set', category: 'Surgical Instruments',
+    description: 'Stainless steel set in a perforated tray: forceps, clamps, scissors, needle holders. Inspected and reprocessed.',
+    price: 740, image: img('1688565631957-0306970fdd74'),
+    manufacturer: 'Aurelian Surgical', deviceModel: 'GS-40', yearOfManufacture: 2021, deviceClass: 'I',
+    condition: 'refurbished',
+    serviceHistory: [{ date: '2026-08-02', type: 'inspection', performedBy: 'Harbourline Medical Equipment (demo)' }]
+  }
 ];
 
 const run = async (): Promise<void> => {
@@ -47,32 +160,52 @@ const run = async (): Promise<void> => {
 
   await Category.deleteMany({});
   await Product.deleteMany({});
-  await User.deleteOne({ email: 'demo-seller@voltra.store' });
-
-  const seller = await User.create({
-    name: 'Voltra Store',
-    email: 'demo-seller@voltra.store',
-    password: await bcrypt.hash('seed-account-not-for-login', 10)
-  });
+  const seedEmails = orgs.map(o => `demo-${o.key}@voltra.store`);
+  await Organization.deleteMany({ owner: { $in: (await User.find({ email: { $in: seedEmails } })).map(u => u._id) } });
+  await User.deleteMany({ email: { $in: [...seedEmails, 'demo-seller@voltra.store'] } });
 
   const categoryDocs: Record<string, ICategory> = {};
   for (const name of categoryNames) {
     categoryDocs[name] = await Category.create({ name });
   }
 
-  for (const p of products) {
+  const orgDocs: Record<string, { org: IOrganization; userId: mongoose.Types.ObjectId }> = {};
+  const password = await bcrypt.hash('seed-account-not-for-login', 10);
+  for (const o of orgs) {
+    const user = await User.create({ name: o.name, email: `demo-${o.key}@voltra.store`, password });
+    const org = await Organization.create({
+      name: o.name, type: o.type, province: o.province, city: o.city, mdelNumber: o.mdelNumber, owner: user._id
+    });
+    user.organization = org._id as mongoose.Types.ObjectId;
+    await user.save();
+    orgDocs[o.key] = { org, userId: user._id as mongoose.Types.ObjectId };
+  }
+
+  for (const l of listings) {
+    const { org, userId } = orgDocs[l.org];
     await Product.create({
-      title: p.title,
-      description: p.description,
-      price: p.price,
-      category: categoryDocs[p.category]._id,
-      imageUrl: p.image,
-      stock: p.stock,
-      seller: seller._id
+      title: l.title,
+      description: l.description,
+      price: l.price,
+      category: categoryDocs[l.category]._id,
+      imageUrl: l.image,
+      stock: 1,
+      seller: userId,
+      organization: org._id,
+      manufacturer: l.manufacturer,
+      deviceModel: l.deviceModel,
+      yearOfManufacture: l.yearOfManufacture,
+      deviceClass: l.deviceClass,
+      condition: l.condition,
+      usageHours: l.usageHours,
+      lastServiceDate: l.lastServiceDate,
+      lastCalibrationDate: l.lastCalibrationDate,
+      serviceHistory: l.serviceHistory ?? [],
+      location: { province: org.province, city: org.city }
     });
   }
 
-  console.log(`Seeded ${categoryNames.length} categories and ${products.length} products (${products.filter(p => p.category === 'Electronics').length} electronics).`);
+  console.log(`Seeded ${categoryNames.length} categories, ${orgs.length} organizations and ${listings.length} listings (all fictional demo data).`);
   await mongoose.connection.close();
   process.exit(0);
 };
