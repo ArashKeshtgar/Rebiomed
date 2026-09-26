@@ -71,7 +71,7 @@ const ProductDetail = () => {
           </div>
           <h1>{product.title}</h1>
           <p className="text-muted mb-0">{product.manufacturer} {product.deviceModel}</p>
-          <h3 className="my-3" style={{ color: 'var(--voltra-accent-dark)' }}>
+          <h3 className="my-3" style={{ color: 'var(--rebiomed-accent-dark)' }}>
             {formatPrice(product.price)}
           </h3>
           <p>{product.description}</p>

@@ -160,9 +160,12 @@ const run = async (): Promise<void> => {
 
   await Category.deleteMany({});
   await Product.deleteMany({});
-  const seedEmails = orgs.map(o => `demo-${o.key}@voltra.store`);
-  await Organization.deleteMany({ owner: { $in: (await User.find({ email: { $in: seedEmails } })).map(u => u._id) } });
-  await User.deleteMany({ email: { $in: [...seedEmails, 'demo-seller@voltra.store'] } });
+  const seedEmails = orgs.map(o => `demo-${o.key}@rebiomed.example`);
+  // Also clear demo accounts created before the rename from Voltra.
+  const legacyEmails = [...orgs.map(o => `demo-${o.key}@voltra.store`), 'demo-seller@voltra.store'];
+  const oldSeedUsers = await User.find({ email: { $in: [...seedEmails, ...legacyEmails] } });
+  await Organization.deleteMany({ owner: { $in: oldSeedUsers.map(u => u._id) } });
+  await User.deleteMany({ _id: { $in: oldSeedUsers.map(u => u._id) } });
 
   const categoryDocs: Record<string, ICategory> = {};
   for (const name of categoryNames) {
@@ -172,7 +175,7 @@ const run = async (): Promise<void> => {
   const orgDocs: Record<string, { org: IOrganization; userId: mongoose.Types.ObjectId }> = {};
   const password = await bcrypt.hash('seed-account-not-for-login', 10);
   for (const o of orgs) {
-    const user = await User.create({ name: o.name, email: `demo-${o.key}@voltra.store`, password });
+    const user = await User.create({ name: o.name, email: `demo-${o.key}@rebiomed.example`, password });
     const org = await Organization.create({
       name: o.name, type: o.type, province: o.province, city: o.city, mdelNumber: o.mdelNumber, owner: user._id
     });

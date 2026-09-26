@@ -1,7 +1,7 @@
 {
-  "name": "mern-animation-project",
+  "name": "rebiomed",
   "version": "1.0.0",
-  "description": "MERN e-commerce store with an animated (framer-motion) React frontend and a Stripe test-mode checkout.",
+  "description": "ReBiomed: a Canadian marketplace for pre-owned medical equipment (MERN + TypeScript, Stripe checkout).",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",

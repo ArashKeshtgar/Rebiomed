@@ -1,4 +1,4 @@
-# Voltra
+# ReBiomed
 
 A Canadian marketplace for pre-owned medical equipment, built with MongoDB, Express, React, and Node — TypeScript on the backend, a `framer-motion`-animated frontend, and a Stripe test-mode checkout in CAD.
 

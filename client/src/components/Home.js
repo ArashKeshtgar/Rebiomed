@@ -77,7 +77,7 @@ const Home = () => (
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 60, delay: 0.2 }}
     >
-      <span style={{ color: '#f59e0b' }}>Volt</span>ra
+      <span style={{ color: '#f59e0b' }}>Re</span>Biomed
     </motion.h1>
     <motion.p
       style={{ maxWidth: 520, marginBottom: '2rem', fontSize: '1.1rem' }}

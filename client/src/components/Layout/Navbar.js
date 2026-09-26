@@ -25,7 +25,7 @@ const Navbar = () => {
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3">
       <div className="d-flex align-items-center justify-content-between w-100 flex-wrap">
         <Link className="navbar-brand fw-bold" to="/" onClick={closeMenu}>
-          <span style={{ color: 'var(--voltra-accent)' }}>Volt</span>ra
+          <span style={{ color: 'var(--rebiomed-accent)' }}>Re</span>Biomed
         </Link>
         <button
           className="btn btn-outline-light d-lg-none"

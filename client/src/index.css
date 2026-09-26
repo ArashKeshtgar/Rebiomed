@@ -1,20 +1,20 @@
 :root {
-  --voltra-bg: #0f172a;
-  --voltra-bg-soft: #1e293b;
-  --voltra-surface: #ffffff;
-  --voltra-text: #0f172a;
-  --voltra-text-muted: #64748b;
-  --voltra-accent: #38bdf8;
-  --voltra-accent-dark: #0ea5e9;
-  --voltra-highlight: #f59e0b;
-  --voltra-radius: 12px;
-  --voltra-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --rebiomed-bg: #0f172a;
+  --rebiomed-bg-soft: #1e293b;
+  --rebiomed-surface: #ffffff;
+  --rebiomed-text: #0f172a;
+  --rebiomed-text-muted: #64748b;
+  --rebiomed-accent: #38bdf8;
+  --rebiomed-accent-dark: #0ea5e9;
+  --rebiomed-highlight: #f59e0b;
+  --rebiomed-radius: 12px;
+  --rebiomed-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
 }
 
 body {
   margin: 0;
   background: #f8fafc;
-  color: var(--voltra-text);
+  color: var(--rebiomed-text);
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -29,8 +29,8 @@ code {
 
 .card {
   border: none;
-  border-radius: var(--voltra-radius);
-  box-shadow: var(--voltra-shadow);
+  border-radius: var(--rebiomed-radius);
+  box-shadow: var(--rebiomed-shadow);
   transition: box-shadow 0.2s ease;
 }
 
@@ -39,19 +39,19 @@ code {
 }
 
 .btn-primary {
-  background-color: var(--voltra-accent-dark);
-  border-color: var(--voltra-accent-dark);
+  background-color: var(--rebiomed-accent-dark);
+  border-color: var(--rebiomed-accent-dark);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-  background-color: var(--voltra-accent);
-  border-color: var(--voltra-accent);
+  background-color: var(--rebiomed-accent);
+  border-color: var(--rebiomed-accent);
 }
 
 .btn-success {
-  background-color: var(--voltra-highlight);
-  border-color: var(--voltra-highlight);
+  background-color: var(--rebiomed-highlight);
+  border-color: var(--rebiomed-highlight);
   color: #1a1a1a;
 }
 
@@ -63,5 +63,5 @@ code {
 }
 
 .navbar.bg-dark {
-  background-color: var(--voltra-bg) !important;
+  background-color: var(--rebiomed-bg) !important;
 }

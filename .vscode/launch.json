@@ -8,7 +8,7 @@
             "type": "pwa-chrome",
             "request": "launch",
             "name": "Open index.html",
-            "file": "c:\\Users\\akesh\\OneDrive\\Documents\\mern-animation-project\\client\\public\\index.html"
+            "file": "${workspaceFolder}/client/public/index.html"
         }
     ]
 }
