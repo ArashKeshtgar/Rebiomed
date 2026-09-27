@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdminTabs from './AdminTabs';
 import {
   DOCUMENT_KINDS,
   ORGANIZATION_TYPES,
@@ -146,7 +147,8 @@ const VerificationQueue = () => {
 
   return (
     <div className="container py-4" style={{ maxWidth: 820 }}>
-      <h1 className="mb-3">Seller Verification</h1>
+      <h1 className="mb-3">Admin</h1>
+      <AdminTabs />
       <div className="btn-group mb-4" role="group" aria-label="Filter by status">
         {TABS.map(t => (
           <button key={t.status} className={`btn btn-sm ${status === t.status ? 'btn-primary' : 'btn-outline-primary'}`}

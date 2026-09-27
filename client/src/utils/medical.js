@@ -78,3 +78,23 @@ export const formatTimestamp = (value) =>
 // UTC midnight, so format in UTC or they can show up a day early.
 export const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }) : '—';
+
+export const FULFILLMENT_STATUSES = {
+  awaiting_payment: { label: 'Awaiting payment', className: 'bg-secondary' },
+  awaiting_shipment: { label: 'Awaiting shipment', className: 'bg-info text-dark' },
+  shipped: { label: 'Shipped', className: 'bg-primary' },
+  delivered: { label: 'Delivered', className: 'bg-success' },
+  disputed: { label: 'Problem reported', className: 'bg-warning text-dark' },
+  cancelled: { label: 'Cancelled by seller', className: 'bg-secondary' },
+  refunded: { label: 'Refunded', className: 'bg-secondary' }
+};
+
+export const PAYOUT_STATUSES = {
+  not_due: 'Held until the buyer confirms delivery',
+  pending: 'Due — waiting for your payout setup',
+  processing: 'Sending…',
+  paid: 'Paid out',
+  failed: 'Payout failed — will retry'
+};
+
+export const formatCents = (cents) => formatPrice(cents / 100);

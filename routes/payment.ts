@@ -18,7 +18,9 @@ router.post('/create-payment-intent', auth, async (req: Request, res: Response) 
       amount: cart.totalCents,
       currency: CURRENCY,
       automatic_payment_methods: { enabled: true },
-      metadata: { orderId: order.id }
+      metadata: { orderId: order.id },
+      // Groups the seller transfers made later for this order.
+      transfer_group: `order_${order.id}`
     });
 
     order.stripePaymentIntentId = paymentIntent.id;

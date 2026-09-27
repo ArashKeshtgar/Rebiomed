@@ -13,6 +13,8 @@ import orderRoutes from './routes/orders';
 import webhookRoutes from './routes/webhook';
 import organizationRoutes from './routes/organizations';
 import adminRoutes from './routes/admin';
+import payoutRoutes from './routes/payouts';
+import salesRoutes from './routes/sales';
 
 const app = express();
 
@@ -31,5 +33,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payouts', payoutRoutes);
+app.use('/api/sales', salesRoutes);
 
 export default app;

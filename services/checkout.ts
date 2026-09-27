@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import Order, { IOrder, IOrderItem } from '../models/Order';
 import Product from '../models/Product';
+import keys from '../config/keys';
 
 export const CURRENCY = 'cad';
 // Medical equipment ships by freight arranged between buyer and seller, so the
@@ -18,14 +19,25 @@ export interface CartLine {
   quantity: number;
 }
 
+export interface PricedFulfillment {
+  organization: Types.ObjectId;
+  subtotalCents: number;
+  platformFeeCents: number;
+}
+
 export interface PricedCart {
   items: IOrderItem[];
+  // One per seller in the cart.
+  fulfillments: PricedFulfillment[];
   subtotalCents: number;
   shippingCents: number;
   totalCents: number;
 }
 
 const toCents = (dollars: number): number => Math.round(dollars * 100);
+
+export const platformFeeFor = (subtotalCents: number): number =>
+  Math.round((subtotalCents * keys.platformFeeBps) / 10000);
 
 // Prices a cart from the database. The client only says *what* it wants and how
 // many; every price comes from the Product collection, never from the request.
@@ -55,11 +67,27 @@ export async function priceCart(lines: unknown): Promise<PricedCart> {
       throw new CheckoutError(`Only ${p.stock} left of "${p.title}"`, 409);
     }
     subtotalCents += toCents(p.price) * quantity;
-    return { product: p._id as Types.ObjectId, title: p.title, price: p.price, quantity };
+    return {
+      product: p._id as Types.ObjectId,
+      organization: p.organization,
+      title: p.title,
+      price: p.price,
+      quantity
+    };
   });
+
+  const bySeller = new Map<string, PricedFulfillment>();
+  for (const item of items) {
+    const key = item.organization.toString();
+    const f = bySeller.get(key) ?? { organization: item.organization, subtotalCents: 0, platformFeeCents: 0 };
+    f.subtotalCents += toCents(item.price) * item.quantity;
+    bySeller.set(key, f);
+  }
+  const fulfillments = [...bySeller.values()].map(f => ({ ...f, platformFeeCents: platformFeeFor(f.subtotalCents) }));
 
   return {
     items,
+    fulfillments,
     subtotalCents,
     shippingCents: SHIPPING_CENTS,
     totalCents: subtotalCents + SHIPPING_CENTS
@@ -70,6 +98,11 @@ export async function createPendingOrder(userId: string, cart: PricedCart): Prom
   return Order.create({
     user: userId,
     items: cart.items,
+    fulfillments: cart.fulfillments.map(f => ({
+      ...f,
+      status: 'awaiting_payment',
+      payout: { status: 'not_due', amountCents: f.subtotalCents - f.platformFeeCents }
+    })),
     subtotal: cart.subtotalCents / 100,
     shipping: cart.shippingCents / 100,
     total: cart.totalCents / 100,
@@ -85,6 +118,7 @@ export interface PaymentIntentLike {
   status: string;
   amount: number;
   currency: string;
+  latest_charge?: string | { id: string } | null;
 }
 
 export type RefundFn = (paymentIntentId: string) => Promise<unknown>;
@@ -131,12 +165,16 @@ export async function finalizeOrder(
       ));
       await refund(paymentIntent.id);
       locked.status = 'refunded';
+      locked.fulfillments.forEach(f => { f.status = 'refunded'; });
       return locked.save();
     }
     decremented.push(item);
   }
 
+  const charge = paymentIntent.latest_charge;
+  locked.stripeChargeId = typeof charge === 'string' ? charge : charge?.id;
   locked.status = 'paid';
+  locked.fulfillments.forEach(f => { f.status = 'awaiting_shipment'; });
   return locked.save();
 }
 

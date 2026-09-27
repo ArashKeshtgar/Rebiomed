@@ -45,6 +45,10 @@ export interface IOrganization extends Document {
   verificationNote?: string;
   verifiedAt?: Date;
   documents: Types.DocumentArray<IVerificationDocument & Document>;
+  // Stripe Connect (Express) account that receives this organization's payouts.
+  stripeAccountId?: string;
+  stripeDetailsSubmitted: boolean;
+  payoutsEnabled: boolean;
   verificationHistory: IVerificationEvent[];
   owner: Types.ObjectId;
   createdAt: Date;
@@ -86,6 +90,9 @@ const OrganizationSchema = new Schema<IOrganization>({
   verificationNote: { type: String, trim: true },
   verifiedAt: { type: Date },
   documents: { type: [VerificationDocumentSchema], default: [] },
+  stripeAccountId: { type: String, unique: true, sparse: true },
+  stripeDetailsSubmitted: { type: Boolean, default: false },
+  payoutsEnabled: { type: Boolean, default: false },
   verificationHistory: { type: [VerificationEventSchema], default: [] },
   owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now }

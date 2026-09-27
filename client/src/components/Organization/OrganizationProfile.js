@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import {
@@ -135,6 +135,65 @@ const DocumentsSection = ({ org, onChange, setErrors }) => {
   );
 };
 
+// Stripe Connect payouts. Sellers are sent to Stripe's hosted onboarding and
+// come back to /organization?stripe=return (or =refresh if the link expired).
+const PayoutsSection = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [state, setState] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const back = searchParams.get('stripe');
+    const request = back === 'return'
+      ? axios.post('/api/payouts/refresh')
+      : axios.get('/api/payouts/status');
+    request
+      .then(res => setState(res.data))
+      .catch(err => setError(errorMessages(err)[0]));
+    if (back === 'refresh') setError('That setup link expired. Continue setting up payouts below.');
+    if (back) setSearchParams({}, { replace: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on arrival
+
+  const go = async (path) => {
+    setBusy(true);
+    setError('');
+    try {
+      const res = await axios.post(`/api/payouts/${path}`);
+      window.location.assign(res.data.url);
+    } catch (err) {
+      setError(errorMessages(err)[0]);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="card shadow-sm p-4 mt-4">
+      <h2 className="h5">Payouts</h2>
+      <p className="text-muted small">
+        Buyers pay ReBiomed at checkout. When a buyer confirms delivery, your share (minus the ReBiomed fee) is sent to
+        your Stripe account. Stripe handles your bank details and identity checks; ReBiomed never sees them.
+      </p>
+      {error && <div className="alert alert-warning py-2 small">{error}</div>}
+      {!state ? null : state.payoutsEnabled ? (
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <span className="badge bg-success">Payouts active</span>
+          <button className="btn btn-sm btn-outline-secondary" disabled={busy} onClick={() => go('dashboard-link')}>
+            Open Stripe Dashboard
+          </button>
+        </div>
+      ) : (
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <span className="badge bg-secondary">{state.detailsSubmitted ? 'Stripe is reviewing your details' : 'Not set up'}</span>
+          <button className="btn btn-sm btn-primary" disabled={busy} onClick={() => go('onboarding')}>
+            {busy ? 'Opening Stripe...' : state.connected ? 'Continue Payout Setup' : 'Set Up Payouts with Stripe'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Create or edit the organization (clinic, hospital, dealer or service company)
 // the user buys and sells on behalf of, and manage its verification.
 const OrganizationProfile = () => {
@@ -260,6 +319,7 @@ const OrganizationProfile = () => {
         </motion.button>
       </form>
 
+      {org && <PayoutsSection />}
       {org && <DocumentsSection org={org} onChange={load} setErrors={setErrors} />}
     </div>
   );

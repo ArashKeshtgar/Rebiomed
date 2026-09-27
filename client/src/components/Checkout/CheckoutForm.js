@@ -88,6 +88,9 @@ const PayForm = ({ orderId, total, onSuccess }) => {
         {processing ? 'Processing...' : `Pay ${formatPrice(total)}`}
       </motion.button>
       <p className="text-muted small mt-2">
+        Your payment is held by ReBiomed and released to the seller only after you confirm the equipment arrived.
+      </p>
+      <p className="text-muted small">
         Test card: 4242 4242 4242 4242, any future date, any CVC.
       </p>
     </form>

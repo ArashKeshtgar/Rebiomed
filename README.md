@@ -15,7 +15,9 @@ Clinics, hospitals, equipment dealers and biomedical service companies list equi
 - Client-side cart persisted to `localStorage`
 - Checkout via Stripe (test/sandbox mode) using Stripe Elements
 - Server-side order pricing and payment verification: the client only sends product ids and quantities; totals come from the database, orders become `paid` only after the server confirms the PaymentIntent with Stripe (client confirm call or signed webhook), and stock is decremented atomically with automatic refund if an item sells out mid-checkout
-- Order history for logged-in users
+- **Escrow-style payouts with Stripe Connect:** the buyer pays the platform; each seller's part of the order is tracked separately (a cart can span several sellers) and its money is held until the buyer confirms delivery. Only then is it transferred to the seller's Stripe Express account, minus the platform fee (`PLATFORM_FEE_BPS`, default 8%). Sellers onboard through Stripe's hosted flow; ReBiomed never sees their bank details. If a seller has not finished onboarding, the payout waits and is released automatically when they do (`account.updated` webhook or the refresh endpoint)
+- **Fulfillment and disputes:** sellers see the buyer's contact to arrange freight and mark their part shipped (carrier, tracking); they can cancel before shipping, which refunds that part and restocks it. Buyers confirm delivery or report a problem, which freezes the payment until an admin refunds the buyer or rules for the seller (an unshipped order then simply continues; nothing is paid out for equipment never shipped). Every transition is a single conditional update, and every refund and transfer carries an idempotency key, so double clicks and webhook retries can't move money twice
+- Order history with per-seller status for buyers, a sales page for sellers
 - Animated UI (page transitions, hover effects, cart badge) built with `framer-motion`
 
 ## Tech stack
@@ -41,7 +43,12 @@ Copy the placeholders in `.env` (backend, project root) and `client/.env` (front
 - `JWT_SECRET` — any long random string
 - `STRIPE_SECRET_KEY` — from your [Stripe test-mode dashboard](https://dashboard.stripe.com/test/apikeys)
 - `STRIPE_WEBHOOK_SECRET` — optional; the `whsec_...` secret printed by `stripe listen --forward-to localhost:5000/api/payment/webhook`. Without it checkout still works (the client asks the server to verify the payment with Stripe); the webhook endpoint just returns 503
+- `STRIPE_CONNECT_WEBHOOK_SECRET` — optional; signing secret of a **Connect** webhook endpoint pointed at the same URL (for `account.updated`). Without it, sellers' payout status is still refreshed when they return from Stripe onboarding
+- `PLATFORM_FEE_BPS` — optional; platform commission in basis points (default `800` = 8%)
+- `CLIENT_URL` — where Stripe sends sellers back after onboarding (default `http://localhost:3000`)
 - `client/.env`: `REACT_APP_STRIPE_PUBLISHABLE_KEY` — the matching publishable test key
+
+To test payouts you also need [Connect enabled](https://dashboard.stripe.com/test/connect/accounts/overview) on the Stripe test account.
 
 ### 3. Seed sample product data
 
@@ -87,8 +94,8 @@ Log in again and open **Admin** in the navbar to see organizations awaiting veri
 ├── app.ts            Express app (routes, middleware) — no listen()
 ├── server.ts         Entry point: imports app, calls app.listen()
 ├── models/           Mongoose schemas + TS interfaces (User, Organization, Product, Category, Review, Order)
-├── routes/           Express routes (auth, organizations, admin, products, categories, reviews, payment, webhook, orders)
-├── services/         Checkout (server-side pricing, order finalization), seller verification, and the Stripe client
+├── routes/           Express routes (auth, organizations, admin, payouts, sales, products, categories, reviews, payment, webhook, orders)
+├── services/         Checkout, fulfillment/escrow payouts, seller verification, and the Stripe client + ops layer
 ├── config/           Env-backed keys and medical domain constants (provinces, device classes, conditions, document kinds)
 ├── middleware/       JWT auth and admin middleware
 ├── types/            Shared TS type declarations (Express Request augmentation)

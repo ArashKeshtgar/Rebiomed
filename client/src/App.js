@@ -17,6 +17,8 @@ import SellProduct from './components/Products/SellProduct';
 import MyListings from './components/Products/MyListings';
 import OrganizationProfile from './components/Organization/OrganizationProfile';
 import VerificationQueue from './components/Admin/VerificationQueue';
+import DisputeQueue from './components/Admin/DisputeQueue';
+import SalesPage from './components/Sales/SalesPage';
 import CartPage from './components/Cart/CartPage';
 import CheckoutForm from './components/Checkout/CheckoutForm';
 import OrderHistory from './components/Orders/OrderHistory';
@@ -94,6 +96,22 @@ const AppRoutes = () => (
         element={
           <PrivateRoute>
             <VerificationQueue />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/disputes"
+        element={
+          <PrivateRoute>
+            <DisputeQueue />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/sales"
+        element={
+          <PrivateRoute>
+            <SalesPage />
           </PrivateRoute>
         }
       />
