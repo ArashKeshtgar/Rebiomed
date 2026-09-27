@@ -30,8 +30,17 @@ export const DEVICE_CLASSES = {
   IV: 'Class IV (highest risk)'
 };
 
-// Mirrors LISTABLE_DEVICE_CLASSES on the server.
-export const LISTABLE_DEVICE_CLASSES = ['I', 'II'];
+// Mirrors listableDeviceClasses() on the server: Class III needs a verified
+// seller, Class IV is not accepted yet.
+export const listableDeviceClasses = (verificationStatus) =>
+  verificationStatus === 'verified' ? ['I', 'II', 'III'] : ['I', 'II'];
+
+export const DOCUMENT_KINDS = {
+  mdel_licence: 'Health Canada MDEL licence',
+  business_registration: 'Business registration',
+  professional_licence: 'Professional / clinic licence',
+  other: 'Other supporting document'
+};
 
 export const CONDITIONS = {
   new: 'New',
@@ -61,5 +70,11 @@ const cad = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' 
 // "CA$1,850.00" — explicit about the currency since sellers and buyers are in Canada.
 export const formatPrice = (amount) => `CA${cad.format(amount)}`;
 
+// For moments in time (uploads, reviews): shown in the viewer's own time zone.
+export const formatTimestamp = (value) =>
+  value ? new Date(value).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+
+// For calendar dates entered without a time (service, calibration): stored as
+// UTC midnight, so format in UTC or they can show up a day early.
 export const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }) : '—';

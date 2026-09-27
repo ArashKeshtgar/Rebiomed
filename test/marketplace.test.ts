@@ -97,13 +97,13 @@ describe('Marketplace', () => {
       expect(res.body.stock).to.equal(1);
     });
 
-    it('refuses Class III and IV devices', async () => {
+    it('refuses Class III and IV devices from an unverified seller', async () => {
       await createOrg();
-      for (const deviceClass of ['III', 'IV']) {
-        const res = await list({ ...validListing(), deviceClass });
-        expect(res).to.have.status(400);
-        expect(res.body.errors[0].msg).to.match(/cannot be listed yet/);
-      }
+      const classIII = await list({ ...validListing(), deviceClass: 'III' });
+      expect(classIII).to.have.status(403);
+      expect(classIII.body.errors[0].msg).to.match(/verified sellers/);
+      const classIV = await list({ ...validListing(), deviceClass: 'IV' });
+      expect(classIV).to.have.status(403);
     });
 
     it('rejects missing medical fields and bad service records', async () => {

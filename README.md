@@ -6,8 +6,9 @@ Clinics, hospitals, equipment dealers and biomedical service companies list equi
 
 ## Features
 
-- **Organizations:** users buy and sell on behalf of a clinic, hospital, dealer or biomedical service provider (province, city, Health Canada MDEL number). Organizations start `unverified`; owners cannot change their own verification status
-- **Medical listings:** manufacturer, model, year, Health Canada device class (I–IV), MDL number, condition, usage hours, last service/calibration dates and a service history. Only Class I and II devices are accepted for now; Class III/IV are refused server-side until seller verification exists
+- **Organizations:** users buy and sell on behalf of a clinic, hospital, dealer or biomedical service provider (province, city, Health Canada MDEL number)
+- **Seller verification:** organizations upload supporting documents (MDEL licence, business registration...) and request review; an admin verifies or rejects with a reason, and every decision is kept in an audit history. Documents are stored outside the public uploads folder, identified by their file signature rather than their name, and downloadable only by the owner and admins. Changing identity details (name, type, location, MDEL) after review resets verification, and admin rights are re-checked in the database on every admin request
+- **Medical listings:** manufacturer, model, year, Health Canada device class (I–IV), MDL number, condition, usage hours, last service/calibration dates and a service history. Class I and II are open to every seller, Class III only to verified sellers, and Class IV is not accepted yet. If a seller loses verification, its Class III listings are hidden from browsing and checkout until it is verified again
 - Browse and filter by category, device class, condition and province; listings show the seller organization and its verification status
 - Product detail pages with a specification table, service history, and reviews
 - JWT-based authentication (register/login)
@@ -70,18 +71,28 @@ Register/log in, add some equipment to the cart, and pay with the Stripe test ca
 4242 4242 4242 4242 — any future expiry date — any CVC
 ```
 
+### 6. Review sellers as an admin
+
+Admin rights can't be granted through the API. Register an account, then:
+
+```bash
+npm run make-admin -- you@example.com
+```
+
+Log in again and open **Admin** in the navbar to see organizations awaiting verification. `--revoke` removes admin rights. Verification documents are saved to `private-uploads/` (override with `PRIVATE_UPLOAD_DIR`).
+
 ## Project structure
 
 ```
 ├── app.ts            Express app (routes, middleware) — no listen()
 ├── server.ts         Entry point: imports app, calls app.listen()
 ├── models/           Mongoose schemas + TS interfaces (User, Organization, Product, Category, Review, Order)
-├── routes/           Express routes (auth, organizations, products, categories, reviews, payment, webhook, orders)
-├── services/         Checkout logic (server-side pricing, order finalization) and the Stripe client
-├── config/           Env-backed keys and medical domain constants (provinces, device classes, conditions)
-├── middleware/       JWT auth middleware
+├── routes/           Express routes (auth, organizations, admin, products, categories, reviews, payment, webhook, orders)
+├── services/         Checkout (server-side pricing, order finalization), seller verification, and the Stripe client
+├── config/           Env-backed keys and medical domain constants (provinces, device classes, conditions, document kinds)
+├── middleware/       JWT auth and admin middleware
 ├── types/            Shared TS type declarations (Express Request augmentation)
-├── seed/             Sample data seeding script
+├── seed/             Sample data seeding and make-admin scripts
 ├── test/             Mocha/Chai integration tests
 ├── client/           React frontend (Redux, Stripe Elements, framer-motion)
 ```

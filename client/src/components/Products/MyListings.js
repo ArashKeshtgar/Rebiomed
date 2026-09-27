@@ -43,6 +43,12 @@ const MyListings = () => {
                 />
                 <div className="card-body d-flex flex-column">
                   <h6 className="card-title">{product.title}</h6>
+                  {product.suspended && (
+                    <p className="small mb-1">
+                      <span className="badge bg-warning text-dark">Hidden</span>{' '}
+                      <span className="text-muted">Class {product.deviceClass} needs a verified organization</span>
+                    </p>
+                  )}
                   <p className="text-muted small mb-1">{product.category?.name}</p>
                   <strong className="mb-3">{formatPrice(product.price)}</strong>
                   <div className="mt-auto d-flex gap-2">

@@ -8,6 +8,7 @@
     "dev": "tsx watch server.ts",
     "build": "tsc",
     "seed": "tsx seed/seedProducts.ts",
+    "make-admin": "tsx seed/makeAdmin.ts",
     "test": "mocha --require tsx/cjs --require ./test/setup.ts test/**/*.test.ts --timeout 10000 --exit"
   },
   "keywords": [],

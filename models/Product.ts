@@ -40,6 +40,9 @@ export interface IProduct extends Document {
   lastCalibrationDate?: Date;
   serviceHistory: IServiceRecord[];
   location: { province: Province; city: string };
+  // Hidden from browsing and checkout, e.g. a Class III listing whose seller
+  // lost its verification.
+  suspended: boolean;
 
   createdAt: Date;
 }
@@ -75,6 +78,7 @@ const ProductSchema = new Schema<IProduct>({
     province: { type: String, enum: PROVINCES, required: true },
     city: { type: String, required: true, trim: true }
   },
+  suspended: { type: Boolean, default: false },
 
   createdAt: { type: Date, default: Date.now }
 });

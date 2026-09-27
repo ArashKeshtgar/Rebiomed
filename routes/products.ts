@@ -9,9 +9,9 @@ import auth from '../middleware/auth';
 import {
   CONDITIONS,
   DEVICE_CLASSES,
-  LISTABLE_DEVICE_CLASSES,
   PROVINCES,
-  SERVICE_TYPES
+  SERVICE_TYPES,
+  listableDeviceClasses
 } from '../config/medical';
 
 const router = express.Router();
@@ -51,9 +51,7 @@ const listingValidators = [
   check('deviceModel', 'Model is required').trim().notEmpty(),
   check('yearOfManufacture', `Year must be between 1950 and ${currentYear}`)
     .optional({ values: 'falsy' }).isInt({ min: 1950, max: currentYear }),
-  check('deviceClass', 'Device class must be I, II, III or IV').isIn(DEVICE_CLASSES).bail()
-    .isIn(LISTABLE_DEVICE_CLASSES)
-    .withMessage('Class III and IV devices cannot be listed yet; they need seller verification first'),
+  check('deviceClass', 'Device class must be I, II, III or IV').isIn(DEVICE_CLASSES),
   check('condition', 'Condition is required').isIn(CONDITIONS),
   check('usageHours', 'Usage hours must be a whole number').optional({ values: 'falsy' }).isInt({ min: 0 }),
   check('lastServiceDate', 'Last service date is invalid').optional({ values: 'falsy' }).isISO8601(),
@@ -66,7 +64,7 @@ const listingValidators = [
 // @access  Public
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = { suspended: { $ne: true } };
     const { category, deviceClass, condition, province } = req.query;
     if (typeof category === 'string' && category) filter.category = category;
     if (typeof deviceClass === 'string' && (DEVICE_CLASSES as readonly string[]).includes(deviceClass)) {
@@ -112,7 +110,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const product = await Product.findById(req.params.id)
       .populate('category', 'name')
       .populate('organization', ORG_PUBLIC_FIELDS);
-    if (!product) return res.status(404).json({ msg: 'Product not found' });
+    if (!product || product.suspended) return res.status(404).json({ msg: 'Product not found' });
     res.json(product);
   } catch (err) {
     console.error((err as Error).message);
@@ -134,6 +132,13 @@ router.post('/', auth, upload.single('image'), listingValidators, async (req: Re
       return res.status(403).json({
         errors: [{ msg: 'Create your organization profile before listing equipment' }]
       });
+    }
+
+    if (!listableDeviceClasses(org.verificationStatus).includes(req.body.deviceClass)) {
+      const msg = req.body.deviceClass === 'IV'
+        ? 'Class IV devices cannot be listed on the marketplace yet'
+        : 'Class III devices can only be listed by verified sellers; request verification from your organization page';
+      return res.status(403).json({ errors: [{ msg }] });
     }
 
     let serviceHistory: IServiceRecord[];

@@ -15,9 +15,27 @@ export type VerificationStatus = typeof VERIFICATION_STATUSES[number];
 export const DEVICE_CLASSES = ['I', 'II', 'III', 'IV'] as const;
 export type DeviceClass = typeof DEVICE_CLASSES[number];
 
-// Class III and IV devices carry the heaviest regulatory obligations, so the
-// marketplace does not accept them until seller verification is in place.
-export const LISTABLE_DEVICE_CLASSES: readonly DeviceClass[] = ['I', 'II'];
+// Which device classes an organization may list, by verification status.
+// Class III needs a seller an admin has verified; Class IV (highest risk,
+// e.g. implantables and life support) is not accepted at all yet.
+export const OPEN_DEVICE_CLASSES: readonly DeviceClass[] = ['I', 'II'];
+export const VERIFIED_DEVICE_CLASSES: readonly DeviceClass[] = ['I', 'II', 'III'];
+
+export const listableDeviceClasses = (status: VerificationStatus): readonly DeviceClass[] =>
+  status === 'verified' ? VERIFIED_DEVICE_CLASSES : OPEN_DEVICE_CLASSES;
+
+// Classes that are only listed because the seller is verified; these listings
+// are suspended if the organization loses its verification.
+export const VERIFICATION_GATED_CLASSES: readonly DeviceClass[] =
+  VERIFIED_DEVICE_CLASSES.filter(c => !OPEN_DEVICE_CLASSES.includes(c));
+
+export const DOCUMENT_KINDS = [
+  'mdel_licence', 'business_registration', 'professional_licence', 'other'
+] as const;
+export type DocumentKind = typeof DOCUMENT_KINDS[number];
+
+export const MAX_DOCUMENTS = 10;
+export const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 
 export const CONDITIONS = [
   'new', 'refurbished', 'used_excellent', 'used_good', 'used_fair', 'for_parts'

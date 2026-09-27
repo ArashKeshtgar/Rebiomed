@@ -16,6 +16,7 @@ import ProductDetail from './components/Products/ProductDetail';
 import SellProduct from './components/Products/SellProduct';
 import MyListings from './components/Products/MyListings';
 import OrganizationProfile from './components/Organization/OrganizationProfile';
+import VerificationQueue from './components/Admin/VerificationQueue';
 import CartPage from './components/Cart/CartPage';
 import CheckoutForm from './components/Checkout/CheckoutForm';
 import OrderHistory from './components/Orders/OrderHistory';
@@ -85,6 +86,14 @@ const AppRoutes = () => (
         element={
           <PrivateRoute>
             <OrganizationProfile />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/verifications"
+        element={
+          <PrivateRoute>
+            <VerificationQueue />
           </PrivateRoute>
         }
       />

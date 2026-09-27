@@ -43,7 +43,7 @@ export async function priceCart(lines: unknown): Promise<PricedCart> {
     quantities.set(id, (quantities.get(id) ?? 0) + qty);
   }
 
-  const products = await Product.find({ _id: { $in: [...quantities.keys()] } });
+  const products = await Product.find({ _id: { $in: [...quantities.keys()] }, suspended: { $ne: true } });
   if (products.length !== quantities.size) {
     throw new CheckoutError('One or more products no longer exist');
   }

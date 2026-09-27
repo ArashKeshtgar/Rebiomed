@@ -8,9 +8,9 @@ import { placeholderImage } from '../../utils/placeholderImage';
 import {
   CONDITIONS,
   DEVICE_CLASSES,
-  LISTABLE_DEVICE_CLASSES,
   PROVINCES,
-  SERVICE_TYPES
+  SERVICE_TYPES,
+  listableDeviceClasses
 } from '../../utils/medical';
 
 const EMPTY_RECORD = { date: '', type: 'preventive_maintenance', performedBy: '', notes: '' };
@@ -117,6 +117,8 @@ const SellProduct = () => {
     );
   }
 
+  const listable = listableDeviceClasses(org.verificationStatus);
+
   const field = (name, label, props = {}) => (
     <>
       <label className="form-label" htmlFor={`f-${name}`}>{label}</label>
@@ -161,11 +163,16 @@ const SellProduct = () => {
             <label className="form-label" htmlFor="f-deviceClass">Health Canada class</label>
             <select id="f-deviceClass" className="form-select" name="deviceClass" value={formData.deviceClass} onChange={onChange}>
               {Object.entries(DEVICE_CLASSES).map(([k, label]) => (
-                <option key={k} value={k} disabled={!LISTABLE_DEVICE_CLASSES.includes(k)}>
-                  {label}{LISTABLE_DEVICE_CLASSES.includes(k) ? '' : ' (not accepted yet)'}
+                <option key={k} value={k} disabled={!listable.includes(k)}>
+                  {label}{listable.includes(k) ? '' : k === 'III' ? ' (verified sellers only)' : ' (not accepted yet)'}
                 </option>
               ))}
             </select>
+            {org.verificationStatus !== 'verified' && (
+              <small className="text-muted">
+                <Link to="/organization">Get verified</Link> to list Class III devices.
+              </small>
+            )}
           </div>
           <div className="col-sm-4 mb-3">{field('mdlNumber', 'MDL number (Class II)')}</div>
           <div className="col-sm-4 mb-3">
