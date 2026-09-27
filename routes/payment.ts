@@ -7,11 +7,11 @@ const router = express.Router();
 
 // @route   POST /api/payment/create-payment-intent
 // @desc    Price the cart server-side, create a pending order and a matching PaymentIntent
-// @body    { items: [{ productId, quantity }] }
+// @body    { items: [{ productId, quantity, offerId? }] }
 // @access  Private
 router.post('/create-payment-intent', auth, async (req: Request, res: Response) => {
   try {
-    const cart = await priceCart(req.body.items);
+    const cart = await priceCart(req.body.items, req.user!.id);
     const order = await createPendingOrder(req.user!.id, cart);
 
     const paymentIntent = await stripe.paymentIntents.create({

@@ -17,6 +17,7 @@ Clinics, hospitals, equipment dealers and biomedical service companies list equi
 - Server-side order pricing and payment verification: the client only sends product ids and quantities; totals come from the database, orders become `paid` only after the server confirms the PaymentIntent with Stripe (client confirm call or signed webhook), and stock is decremented atomically with automatic refund if an item sells out mid-checkout
 - **Escrow-style payouts with Stripe Connect:** the buyer pays the platform; each seller's part of the order is tracked separately (a cart can span several sellers) and its money is held until the buyer confirms delivery. Only then is it transferred to the seller's Stripe Express account, minus the platform fee (`PLATFORM_FEE_BPS`, default 8%). Sellers onboard through Stripe's hosted flow; ReBiomed never sees their bank details. If a seller has not finished onboarding, the payout waits and is released automatically when they do (`account.updated` webhook or the refresh endpoint)
 - **Fulfillment and disputes:** sellers see the buyer's contact to arrange freight and mark their part shipped (carrier, tracking); they can cancel before shipping, which refunds that part and restocks it. Buyers confirm delivery or report a problem, which freezes the payment until an admin refunds the buyer or rules for the seller (an unshipped order then simply continues; nothing is paid out for equipment never shipped). Every transition is a single conditional update, and every refund and transfer carries an idempotency key, so double clicks and webhook retries can't move money twice
+- **Offers:** buyers can offer less than the listed price; the seller accepts, declines, or counters once, and the buyer can accept the counter. Unanswered offers lapse after 7 days; an agreed price can be checked out for 72 hours, by that buyer only, for one unit. The price is taken from the offer on the server, never from the cart, and the offer is marked used when the order is paid, so it can't be redeemed twice (a second order paying with it at the same time is refunded). One open offer per buyer and listing is enforced by a unique index, so racing requests can't open two
 - Order history with per-seller status for buyers, a sales page for sellers
 - Animated UI (page transitions, hover effects, cart badge) built with `framer-motion`
 
@@ -93,9 +94,9 @@ Log in again and open **Admin** in the navbar to see organizations awaiting veri
 ```
 ├── app.ts            Express app (routes, middleware) — no listen()
 ├── server.ts         Entry point: imports app, calls app.listen()
-├── models/           Mongoose schemas + TS interfaces (User, Organization, Product, Category, Review, Order)
-├── routes/           Express routes (auth, organizations, admin, payouts, sales, products, categories, reviews, payment, webhook, orders)
-├── services/         Checkout, fulfillment/escrow payouts, seller verification, and the Stripe client + ops layer
+├── models/           Mongoose schemas + TS interfaces (User, Organization, Product, Category, Review, Order, Offer)
+├── routes/           Express routes (auth, organizations, admin, payouts, sales, offers, products, categories, reviews, payment, webhook, orders)
+├── services/         Checkout, offers, fulfillment/escrow payouts, seller verification, and the Stripe client + ops layer
 ├── config/           Env-backed keys and medical domain constants (provinces, device classes, conditions, document kinds)
 ├── middleware/       JWT auth and admin middleware
 ├── types/            Shared TS type declarations (Express Request augmentation)

@@ -98,3 +98,16 @@ export const PAYOUT_STATUSES = {
 };
 
 export const formatCents = (cents) => formatPrice(cents / 100);
+
+export const OFFER_STATUSES = {
+  pending: { label: 'Waiting for seller', className: 'bg-info text-dark' },
+  countered: { label: 'Counter-offer', className: 'bg-warning text-dark' },
+  accepted: { label: 'Accepted', className: 'bg-success' },
+  used: { label: 'Purchased', className: 'bg-secondary' },
+  declined: { label: 'Declined', className: 'bg-secondary' },
+  withdrawn: { label: 'Withdrawn', className: 'bg-secondary' },
+  expired: { label: 'Expired', className: 'bg-secondary' }
+};
+
+export const formatDeadline = (value) =>
+  value ? new Date(value).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';

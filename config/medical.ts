@@ -44,3 +44,9 @@ export type Condition = typeof CONDITIONS[number];
 
 export const SERVICE_TYPES = ['preventive_maintenance', 'repair', 'calibration', 'inspection'] as const;
 export type ServiceType = typeof SERVICE_TYPES[number];
+
+// Offers: a buyer proposes a lower price, the seller accepts, declines or
+// counters. Unanswered offers lapse; an accepted price is held only briefly
+// so it can't be sat on while the equipment sells to someone else.
+export const OFFER_RESPONSE_DAYS = 7;
+export const ACCEPTED_OFFER_HOURS = 72;

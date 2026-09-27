@@ -3,7 +3,11 @@ import { GET_ORDERS_SUCCESS, ADD_ORDER_SUCCESS, GET_ERRORS } from './types';
 
 // The server prices the cart itself; we only send what we want and how many.
 export const createPaymentIntent = async (cartItems) => {
-  const items = cartItems.map(i => ({ productId: i.productId, quantity: i.quantity }));
+  const items = cartItems.map(i => ({
+    productId: i.productId,
+    quantity: i.quantity,
+    ...(i.offerId ? { offerId: i.offerId } : {})
+  }));
   const res = await axios.post('/api/payment/create-payment-intent', { items });
   return res.data; // { clientSecret, orderId, subtotal, shipping, total }
 };

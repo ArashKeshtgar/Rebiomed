@@ -47,12 +47,21 @@ const CartPage = () => {
                   />
                   <div className="flex-grow-1">
                     <h6 className="mb-1">{item.title}</h6>
-                    <span className="text-muted">{formatPrice(item.price)} each</span>
+                    {item.offerId ? (
+                      <span>
+                        <span className="badge bg-success me-2">Your offer</span>
+                        {formatPrice(item.price)}{' '}
+                        {item.listPrice && <s className="text-muted small">{formatPrice(item.listPrice)}</s>}
+                      </span>
+                    ) : (
+                      <span className="text-muted">{formatPrice(item.price)} each</span>
+                    )}
                   </div>
                   <div className="d-flex align-items-center border rounded mx-3">
                     <button
                       className="btn btn-sm"
                       onClick={() => dispatch(updateCartQty(item.productId, item.quantity - 1))}
+                      disabled={!!item.offerId}
                     >
                       −
                     </button>
@@ -60,7 +69,7 @@ const CartPage = () => {
                     <button
                       className="btn btn-sm"
                       onClick={() => dispatch(updateCartQty(item.productId, item.quantity + 1))}
-                      disabled={item.stock !== undefined && item.quantity >= item.stock}
+                      disabled={!!item.offerId || (item.stock !== undefined && item.quantity >= item.stock)}
                     >
                       +
                     </button>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProduct } from '../../actions/productActions';
@@ -13,9 +14,84 @@ import {
   PROVINCES,
   SERVICE_TYPES,
   VERIFICATION_BADGES,
+  OFFER_STATUSES,
+  formatCents,
   formatDate,
   formatPrice
 } from '../../utils/medical';
+
+// Shows the buyer's open offer on this listing, or a form to make one.
+const MakeOffer = ({ product }) => {
+  const [offer, setOffer] = useState(undefined); // undefined = loading, null = none open
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    axios.get('/api/offers/mine', { params: { product: product._id } })
+      .then(res => setOffer(res.data.find(o => ['pending', 'countered', 'accepted'].includes(o.status)) || null))
+      .catch(() => setOffer(null));
+  }, [product._id]);
+
+  const submit = async e => {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      setOffer((await axios.post('/api/offers', { productId: product._id, amount, message })).data);
+      setOpen(false);
+    } catch (err) {
+      setError((err.response && err.response.data && err.response.data.msg) || 'Could not send the offer');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (offer === undefined) return null;
+
+  if (offer) {
+    const status = OFFER_STATUSES[offer.status];
+    return (
+      <div className="alert alert-light border small mt-3">
+        Your offer of <strong>{formatCents(offer.amountCents)}</strong>{' '}
+        <span className={`badge ${status.className}`}>{status.label}</span>
+        {offer.status === 'countered' && <> — the seller countered at <strong>{formatCents(offer.counterAmountCents)}</strong></>}
+        {' '}<Link to="/offers">Manage offers →</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3">
+      {!open ? (
+        <button className="btn btn-sm btn-outline-primary" onClick={() => setOpen(true)}>Make an Offer</button>
+      ) : (
+        <form onSubmit={submit} className="border rounded p-3">
+          <div className="row g-2">
+            <div className="col-sm-5">
+              <label className="form-label small" htmlFor="offer-amount">Your offer (CAD)</label>
+              <input id="offer-amount" type="number" step="0.01" min="0.01" max={product.price - 0.01} required
+                className="form-control form-control-sm" value={amount} onChange={e => setAmount(e.target.value)} />
+            </div>
+            <div className="col-sm-7">
+              <label className="form-label small" htmlFor="offer-message">Message (optional)</label>
+              <input id="offer-message" className="form-control form-control-sm" maxLength="1000"
+                value={message} onChange={e => setMessage(e.target.value)} />
+            </div>
+          </div>
+          {error && <div className="text-danger small mt-2">{error}</div>}
+          <div className="d-flex gap-2 mt-2">
+            <button type="submit" className="btn btn-sm btn-primary" disabled={busy}>{busy ? 'Sending...' : 'Send Offer'}</button>
+            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setOpen(false)}>Cancel</button>
+          </div>
+          <small className="text-muted d-block mt-2">The seller has 7 days to answer. If accepted, you can buy at that price for 72 hours.</small>
+        </form>
+      )}
+    </div>
+  );
+};
 
 const SpecRow = ({ label, children }) => (
   <tr>
@@ -109,6 +185,8 @@ const ProductDetail = () => {
               </motion.button>
             </div>
           )}
+
+          {isAuthenticated && !soldOut && <MakeOffer product={product} />}
 
           {org && (
             <div className="card border-0 bg-light mt-4">

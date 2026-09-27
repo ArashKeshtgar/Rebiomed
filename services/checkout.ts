@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import Order, { IOrder, IOrderItem } from '../models/Order';
 import Product from '../models/Product';
 import keys from '../config/keys';
+import { claimOffers, releaseOffers, usableOffer } from './offers';
 
 export const CURRENCY = 'cad';
 // Medical equipment ships by freight arranged between buyer and seller, so the
@@ -17,6 +18,8 @@ export class CheckoutError extends Error {
 export interface CartLine {
   productId: string;
   quantity: number;
+  // An accepted offer to check out at its agreed price (one unit).
+  offerId?: string;
 }
 
 export interface PricedFulfillment {
@@ -40,19 +43,36 @@ export const platformFeeFor = (subtotalCents: number): number =>
   Math.round((subtotalCents * keys.platformFeeBps) / 10000);
 
 // Prices a cart from the database. The client only says *what* it wants and how
-// many; every price comes from the Product collection, never from the request.
-export async function priceCart(lines: unknown): Promise<PricedCart> {
+// many; every price comes from the Product collection (or, for a line with an
+// offerId, from that buyer's accepted offer), never from the request.
+export async function priceCart(lines: unknown, buyerId?: string): Promise<PricedCart> {
   if (!Array.isArray(lines) || lines.length === 0) {
     throw new CheckoutError('Cart is empty');
   }
 
   const quantities = new Map<string, number>();
+  const offerIds = new Map<string, string>();
   for (const line of lines as CartLine[]) {
     const id = String(line?.productId ?? '');
     const qty = Number(line?.quantity);
     if (!Types.ObjectId.isValid(id)) throw new CheckoutError('Invalid product id');
     if (!Number.isInteger(qty) || qty < 1) throw new CheckoutError('Invalid quantity');
+    if (line?.offerId !== undefined || offerIds.has(id)) {
+      // An offer covers exactly one unit, bought on its own line.
+      if (qty !== 1 || quantities.has(id)) {
+        throw new CheckoutError('An offer covers one unit; remove other quantities of that item from the cart');
+      }
+      offerIds.set(id, String(line.offerId));
+    }
     quantities.set(id, (quantities.get(id) ?? 0) + qty);
+  }
+
+  // Agreed price in cents for each product bought through an offer.
+  const offerPrices = new Map<string, { cents: number; offer: Types.ObjectId }>();
+  for (const [productId, offerId] of offerIds) {
+    const offer = buyerId ? await usableOffer(offerId, buyerId, productId) : null;
+    if (!offer) throw new CheckoutError('That offer is no longer available; it may have expired or been withdrawn');
+    offerPrices.set(productId, { cents: offer.agreedAmountCents!, offer: offer._id as Types.ObjectId });
   }
 
   const products = await Product.find({ _id: { $in: [...quantities.keys()] }, suspended: { $ne: true } });
@@ -66,13 +86,16 @@ export async function priceCart(lines: unknown): Promise<PricedCart> {
     if (p.stock < quantity) {
       throw new CheckoutError(`Only ${p.stock} left of "${p.title}"`, 409);
     }
-    subtotalCents += toCents(p.price) * quantity;
+    const offered = offerPrices.get(p.id);
+    const unitCents = offered ? offered.cents : toCents(p.price);
+    subtotalCents += unitCents * quantity;
     return {
       product: p._id as Types.ObjectId,
       organization: p.organization,
       title: p.title,
-      price: p.price,
-      quantity
+      price: unitCents / 100,
+      quantity,
+      ...(offered ? { offer: offered.offer } : {})
     };
   });
 
@@ -153,6 +176,20 @@ export async function finalizeOrder(
   );
   if (!locked) return (await Order.findById(orderId))!;
 
+  const refundOrder = async () => {
+    await refund(paymentIntent.id);
+    locked.status = 'refunded';
+    locked.fulfillments.forEach(f => { f.status = 'refunded'; });
+    return locked.save();
+  };
+
+  // Offers first: if one was already used by another order (the same offer
+  // checked out twice), this payment is refunded rather than honoured twice.
+  const offerIds = locked.items.filter(i => i.offer).map(i => i.offer!);
+  if (!await claimOffers(offerIds, locked._id as Types.ObjectId, locked.createdAt)) {
+    return refundOrder();
+  }
+
   const decremented: IOrderItem[] = [];
   for (const item of locked.items) {
     const res = await Product.updateOne(
@@ -163,10 +200,8 @@ export async function finalizeOrder(
       await Promise.all(decremented.map(d =>
         Product.updateOne({ _id: d.product }, { $inc: { stock: d.quantity } })
       ));
-      await refund(paymentIntent.id);
-      locked.status = 'refunded';
-      locked.fulfillments.forEach(f => { f.status = 'refunded'; });
-      return locked.save();
+      await releaseOffers(offerIds, locked._id as Types.ObjectId);
+      return refundOrder();
     }
     decremented.push(item);
   }

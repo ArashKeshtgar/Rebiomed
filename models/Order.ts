@@ -6,6 +6,8 @@ export interface IOrderItem {
   title: string;
   price: number;
   quantity: number;
+  // Set when bought at an offer's agreed price (price is then that price).
+  offer?: Types.ObjectId;
 }
 
 // pending    -> PaymentIntent created, waiting for Stripe to confirm payment
@@ -85,7 +87,8 @@ const OrderItemSchema = new Schema<IOrderItem>({
   organization: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
   title: { type: String, required: true },
   price: { type: Number, required: true },
-  quantity: { type: Number, required: true }
+  quantity: { type: Number, required: true },
+  offer: { type: Schema.Types.ObjectId, ref: 'Offer' }
 }, { _id: false });
 
 const FulfillmentSchema = new Schema<IFulfillment>({

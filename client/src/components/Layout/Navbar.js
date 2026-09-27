@@ -55,6 +55,9 @@ const Navbar = () => {
                       <Link className="nav-link" to="/sales" onClick={closeMenu}>My Sales</Link>
                     </li>
                     <li className="nav-item">
+                      <Link className="nav-link" to="/offers" onClick={closeMenu}>Offers</Link>
+                    </li>
+                    <li className="nav-item">
                       <Link className="nav-link" to="/organization" onClick={closeMenu}>My Organization</Link>
                     </li>
                     {user.isAdmin && (

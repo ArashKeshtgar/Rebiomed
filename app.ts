@@ -15,6 +15,7 @@ import organizationRoutes from './routes/organizations';
 import adminRoutes from './routes/admin';
 import payoutRoutes from './routes/payouts';
 import salesRoutes from './routes/sales';
+import offerRoutes from './routes/offers';
 
 const app = express();
 
@@ -35,5 +36,6 @@ app.use('/api/organizations', organizationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/offers', offerRoutes);
 
 export default app;
