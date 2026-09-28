@@ -16,6 +16,7 @@ import adminRoutes from './routes/admin';
 import payoutRoutes from './routes/payouts';
 import salesRoutes from './routes/sales';
 import offerRoutes from './routes/offers';
+import inspectionRoutes from './routes/inspections';
 
 const app = express();
 
@@ -37,5 +38,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/offers', offerRoutes);
+app.use('/api/inspections', inspectionRoutes);
 
 export default app;

@@ -50,3 +50,25 @@ export type ServiceType = typeof SERVICE_TYPES[number];
 // so it can't be sat on while the equipment sells to someone else.
 export const OFFER_RESPONSE_DAYS = 7;
 export const ACCEPTED_OFFER_HOURS = 72;
+
+// Independent inspections: a seller asks a verified biomedical service
+// provider (not itself) to inspect a listed device. The report is published on
+// the listing whatever the result, which is what makes it worth trusting.
+export const INSPECTION_CHECKS = [
+  'visual_physical',          // housing, cables, connectors, labels, cleanliness
+  'electrical_safety',        // leakage current / earth resistance (IEC 62353, CSA C22.2 No. 60601-1)
+  'functional_performance',   // operates to the manufacturer's specifications
+  'calibration_accuracy',     // readings against a reference
+  'alarms',                   // audible/visual alarms and self-tests
+  'accessories_documentation' // probes, cuffs, manuals, service records present
+] as const;
+export type InspectionCheck = typeof INSPECTION_CHECKS[number];
+
+export const CHECK_RESULTS = ['pass', 'fail', 'not_applicable'] as const;
+export type CheckResult = typeof CHECK_RESULTS[number];
+
+export const INSPECTION_OUTCOMES = ['pass', 'pass_with_findings', 'fail'] as const;
+export type InspectionOutcome = typeof INSPECTION_OUTCOMES[number];
+
+// How long a report counts as current on a listing.
+export const INSPECTION_VALID_DAYS = 365;

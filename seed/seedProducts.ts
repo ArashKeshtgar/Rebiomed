@@ -5,9 +5,21 @@ import bcrypt from 'bcryptjs';
 import connectDB from '../db';
 import Category, { ICategory } from '../models/Category';
 import Organization, { IOrganization } from '../models/Organization';
-import Product from '../models/Product';
+import Product, { IProduct } from '../models/Product';
 import User from '../models/User';
-import { Condition, DeviceClass, OrganizationType, Province, ServiceType } from '../config/medical';
+import Inspection from '../models/Inspection';
+import {
+  CheckResult,
+  Condition,
+  DeviceClass,
+  INSPECTION_CHECKS,
+  INSPECTION_VALID_DAYS,
+  InspectionCheck,
+  InspectionOutcome,
+  OrganizationType,
+  Province,
+  ServiceType
+} from '../config/medical';
 
 // All organizations, manufacturers and models below are FICTIONAL demo data.
 
@@ -32,13 +44,43 @@ interface SeedOrg {
   province: Province;
   city: string;
   mdelNumber?: string;
+  verified?: boolean;
 }
 
 const orgs: SeedOrg[] = [
   { key: 'dealer', name: 'Harbourline Medical Equipment (demo)', type: 'dealer', province: 'BC', city: 'Vancouver', mdelNumber: 'DEMO-0001' },
   { key: 'clinic', name: 'Maple Grove Family Clinic (demo)', type: 'clinic', province: 'ON', city: 'Toronto' },
   { key: 'dental', name: 'Prairie Smiles Dental (demo)', type: 'clinic', province: 'AB', city: 'Calgary' },
-  { key: 'service', name: 'Northstar Biomedical Services (demo)', type: 'service_provider', province: 'QC', city: 'Montreal' }
+  { key: 'service', name: 'Northstar Biomedical Services (demo)', type: 'service_provider', province: 'QC', city: 'Montreal', verified: true }
+];
+
+interface SeedInspection {
+  listing: string; // title
+  inspectedAt: string;
+  technicianName: string;
+  credential: string;
+  serialNumber: string;
+  outcome: InspectionOutcome;
+  summary: string;
+  results: Partial<Record<InspectionCheck, [CheckResult, string?]>>;
+}
+
+// Filed by the demo service provider; checks left out default to a pass.
+const inspections: SeedInspection[] = [
+  {
+    listing: 'Portable Ultrasound System with Two Probes', inspectedAt: '2026-08-18',
+    technicianName: 'J. Tremblay (demo)', credential: 'CET, CBET', serialNumber: 'KD-C5-210488',
+    outcome: 'pass',
+    summary: 'Both probes imaged a phantom without dropout or delamination. Leakage currents within IEC 62353 limits. Ready for clinical use.',
+    results: { alarms: ['not_applicable', 'No alarm functions on this system'] }
+  },
+  {
+    listing: '12" Bedside Patient Monitor', inspectedAt: '2026-09-02',
+    technicianName: 'A. Singh (demo)', credential: 'CET', serialNumber: 'AM-BM12-19-3317',
+    outcome: 'pass_with_findings',
+    summary: 'Monitor performs to specification against a patient simulator. NIBP hose shows cracking and should be replaced before use (part is inexpensive and available).',
+    results: { accessories_documentation: ['fail', 'NIBP hose cracked near the connector; operator manual missing'] }
+  }
 ];
 
 interface SeedListing {
@@ -160,6 +202,7 @@ const run = async (): Promise<void> => {
 
   await Category.deleteMany({});
   await Product.deleteMany({});
+  await Inspection.deleteMany({});
   const seedEmails = orgs.map(o => `demo-${o.key}@rebiomed.example`);
   // Also clear demo accounts created before the rename from Voltra.
   const legacyEmails = [...orgs.map(o => `demo-${o.key}@voltra.store`), 'demo-seller@voltra.store'];
@@ -177,16 +220,22 @@ const run = async (): Promise<void> => {
   for (const o of orgs) {
     const user = await User.create({ name: o.name, email: `demo-${o.key}@rebiomed.example`, password });
     const org = await Organization.create({
-      name: o.name, type: o.type, province: o.province, city: o.city, mdelNumber: o.mdelNumber, owner: user._id
+      name: o.name, type: o.type, province: o.province, city: o.city, mdelNumber: o.mdelNumber, owner: user._id,
+      ...(o.verified && {
+        verificationStatus: 'verified',
+        verifiedAt: new Date(),
+        verificationHistory: [{ status: 'verified', at: new Date(), by: user._id, note: 'Demo seed data' }]
+      })
     });
     user.organization = org._id as mongoose.Types.ObjectId;
     await user.save();
     orgDocs[o.key] = { org, userId: user._id as mongoose.Types.ObjectId };
   }
 
+  const productDocs: Record<string, IProduct> = {};
   for (const l of listings) {
     const { org, userId } = orgDocs[l.org];
-    await Product.create({
+    productDocs[l.title] = await Product.create({
       title: l.title,
       description: l.description,
       price: l.price,
@@ -208,7 +257,42 @@ const run = async (): Promise<void> => {
     });
   }
 
-  console.log(`Seeded ${categoryNames.length} categories, ${orgs.length} organizations and ${listings.length} listings (all fictional demo data).`);
+  const inspector = orgDocs.service;
+  for (const s of inspections) {
+    const product = productDocs[s.listing];
+    const inspectedAt = new Date(s.inspectedAt);
+    const inspection = await Inspection.create({
+      product: product._id,
+      sellerOrganization: product.organization,
+      inspectorOrganization: inspector.org._id,
+      requestedBy: product.seller,
+      status: 'completed',
+      report: {
+        inspectedAt,
+        technicianName: s.technicianName,
+        credential: s.credential,
+        serialNumber: s.serialNumber,
+        checks: INSPECTION_CHECKS.map(item => {
+          const [result, notes] = s.results[item] ?? ['pass'];
+          return { item, result, notes };
+        }),
+        outcome: s.outcome,
+        summary: s.summary,
+        submittedBy: inspector.userId,
+        submittedAt: inspectedAt
+      }
+    });
+    product.inspection = {
+      report: inspection._id as mongoose.Types.ObjectId,
+      outcome: s.outcome,
+      inspectedAt,
+      validUntil: new Date(inspectedAt.getTime() + INSPECTION_VALID_DAYS * 24 * 60 * 60 * 1000),
+      inspectorName: inspector.org.name
+    };
+    await product.save();
+  }
+
+  console.log(`Seeded ${categoryNames.length} categories, ${orgs.length} organizations, ${listings.length} listings and ${inspections.length} inspection reports (all fictional demo data).`);
   await mongoose.connection.close();
   process.exit(0);
 };

@@ -6,6 +6,7 @@ import Product, { IServiceRecord } from '../models/Product';
 import Organization from '../models/Organization';
 import User from '../models/User';
 import auth from '../middleware/auth';
+import { cancelOpenForProduct } from '../services/inspections';
 import {
   CONDITIONS,
   DEVICE_CLASSES,
@@ -60,12 +61,14 @@ const listingValidators = [
 ];
 
 // @route   GET /api/products
-// @desc    Browse listings. Optional filters: category, deviceClass, condition, province
+// @desc    Browse listings. Optional filters: category, deviceClass, condition, province,
+//          inspected=1 (has a current independent inspection report)
 // @access  Public
 router.get('/', async (req: Request, res: Response) => {
   try {
     const filter: Record<string, unknown> = { suspended: { $ne: true } };
-    const { category, deviceClass, condition, province } = req.query;
+    const { category, deviceClass, condition, province, inspected } = req.query;
+    if (inspected === '1' || inspected === 'true') filter['inspection.validUntil'] = { $gt: new Date() };
     if (typeof category === 'string' && category) filter.category = category;
     if (typeof deviceClass === 'string' && (DEVICE_CLASSES as readonly string[]).includes(deviceClass)) {
       filter.deviceClass = deviceClass;
@@ -195,6 +198,7 @@ router.delete('/:id', auth, async (req: Request, res: Response) => {
       return res.status(403).json({ msg: 'Not authorized to remove this listing' });
     }
     await product.deleteOne();
+    await cancelOpenForProduct(product.id);
     res.json({ msg: 'Listing removed' });
   } catch (err) {
     console.error((err as Error).message);

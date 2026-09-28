@@ -4,6 +4,8 @@ import {
   Condition,
   DEVICE_CLASSES,
   DeviceClass,
+  INSPECTION_OUTCOMES,
+  InspectionOutcome,
   PROVINCES,
   Province,
   SERVICE_TYPES,
@@ -43,6 +45,15 @@ export interface IProduct extends Document {
   // Hidden from browsing and checkout, e.g. a Class III listing whose seller
   // lost its verification.
   suspended: boolean;
+  // Latest completed independent inspection, copied here so browsing can
+  // filter and badge on it. The full report lives in the Inspection.
+  inspection?: {
+    report: Types.ObjectId;
+    outcome: InspectionOutcome;
+    inspectedAt: Date;
+    validUntil: Date;
+    inspectorName: string;
+  };
 
   createdAt: Date;
 }
@@ -79,6 +90,16 @@ const ProductSchema = new Schema<IProduct>({
     city: { type: String, required: true, trim: true }
   },
   suspended: { type: Boolean, default: false },
+  inspection: {
+    type: new Schema({
+      report: { type: Schema.Types.ObjectId, ref: 'Inspection', required: true },
+      outcome: { type: String, enum: INSPECTION_OUTCOMES, required: true },
+      inspectedAt: { type: Date, required: true },
+      validUntil: { type: Date, required: true },
+      inspectorName: { type: String, required: true }
+    }, { _id: false }),
+    default: undefined
+  },
 
   createdAt: { type: Date, default: Date.now }
 });

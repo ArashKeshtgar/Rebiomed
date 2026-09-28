@@ -109,5 +109,39 @@ export const OFFER_STATUSES = {
   expired: { label: 'Expired', className: 'bg-secondary' }
 };
 
+// Independent inspections. Keys mirror INSPECTION_CHECKS etc. on the server.
+export const INSPECTION_CHECKS = {
+  visual_physical: { label: 'Visual & physical', hint: 'Housing, cables, connectors, labels, cleanliness' },
+  electrical_safety: { label: 'Electrical safety', hint: 'Leakage current and earth resistance (IEC 62353 / CSA C22.2 No. 60601-1)' },
+  functional_performance: { label: 'Functional performance', hint: "Operates to the manufacturer's specifications" },
+  calibration_accuracy: { label: 'Calibration / accuracy', hint: 'Readings checked against a reference' },
+  alarms: { label: 'Alarms & self-tests', hint: 'Audible and visual alarms, power-on self-test' },
+  accessories_documentation: { label: 'Accessories & documentation', hint: 'Probes, cuffs, cables, manuals, service records' }
+};
+
+export const CHECK_RESULTS = {
+  pass: { label: 'Pass', className: 'text-success' },
+  fail: { label: 'Fail', className: 'text-danger fw-semibold' },
+  not_applicable: { label: 'N/A', className: 'text-muted' }
+};
+
+export const INSPECTION_OUTCOMES = {
+  pass: { label: 'Passed inspection', className: 'bg-success' },
+  pass_with_findings: { label: 'Passed with findings', className: 'bg-warning text-dark' },
+  fail: { label: 'Failed inspection', className: 'bg-danger' }
+};
+
+export const INSPECTION_STATUSES = {
+  requested: { label: 'Waiting for inspector', className: 'bg-info text-dark' },
+  accepted: { label: 'Inspection scheduled', className: 'bg-primary' },
+  completed: { label: 'Report filed', className: 'bg-success' },
+  declined: { label: 'Declined', className: 'bg-secondary' },
+  cancelled: { label: 'Cancelled', className: 'bg-secondary' }
+};
+
+// A listing's inspection summary counts only while it is still current.
+export const currentInspection = (product) =>
+  product && product.inspection && new Date(product.inspection.validUntil) > new Date() ? product.inspection : null;
+
 export const formatDeadline = (value) =>
   value ? new Date(value).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';

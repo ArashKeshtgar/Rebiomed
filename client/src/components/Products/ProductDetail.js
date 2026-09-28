@@ -7,6 +7,7 @@ import { getProduct } from '../../actions/productActions';
 import { addToCart } from '../../actions/cartActions';
 import ReviewList from '../Reviews/ReviewList';
 import AddReview from '../Reviews/AddReview';
+import InspectionReport from '../Inspections/InspectionReport';
 import {
   CONDITIONS,
   DEVICE_CLASSES,
@@ -15,6 +16,8 @@ import {
   SERVICE_TYPES,
   VERIFICATION_BADGES,
   OFFER_STATUSES,
+  INSPECTION_OUTCOMES,
+  currentInspection,
   formatCents,
   formatDate,
   formatPrice
@@ -123,6 +126,7 @@ const ProductDetail = () => {
   const org = product.organization;
   const badge = org && VERIFICATION_BADGES[org.verificationStatus];
   const soldOut = product.stock < 1;
+  const inspection = currentInspection(product);
   const history = [...(product.serviceHistory || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return (
@@ -144,6 +148,11 @@ const ProductDetail = () => {
             <span className="badge bg-secondary">{product.category?.name}</span>
             <span className="badge bg-info text-dark">Health Canada Class {product.deviceClass}</span>
             <span className="badge bg-light text-dark border">{CONDITIONS[product.condition]}</span>
+            {inspection && (
+              <a href="#inspection" className={`badge text-decoration-none ${INSPECTION_OUTCOMES[inspection.outcome].className}`}>
+                {INSPECTION_OUTCOMES[inspection.outcome].label} · {formatDate(inspection.inspectedAt)}
+              </a>
+            )}
           </div>
           <h1>{product.title}</h1>
           <p className="text-muted mb-0">{product.manufacturer} {product.deviceModel}</p>
@@ -259,6 +268,10 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4" id="inspection">
+        <InspectionReport productId={product._id} />
       </div>
 
       <hr className="my-5" />

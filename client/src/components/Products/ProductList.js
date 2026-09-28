@@ -5,9 +5,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { getProducts } from '../../actions/productActions';
 import { addToCart } from '../../actions/cartActions';
-import { CONDITIONS, DEVICE_CLASSES, PROVINCES, VERIFICATION_BADGES, formatPrice } from '../../utils/medical';
+import {
+  CONDITIONS,
+  DEVICE_CLASSES,
+  INSPECTION_OUTCOMES,
+  PROVINCES,
+  VERIFICATION_BADGES,
+  currentInspection,
+  formatPrice
+} from '../../utils/medical';
 
-const FILTER_KEYS = ['category', 'deviceClass', 'condition', 'province'];
+const FILTER_KEYS = ['category', 'deviceClass', 'condition', 'province', 'inspected'];
 
 const ProductList = () => {
   const dispatch = useDispatch();
@@ -25,8 +33,8 @@ const ProductList = () => {
   }, []);
 
   useEffect(() => {
-    const [category, deviceClass, condition, province] = filterKey.split('|');
-    dispatch(getProducts({ category, deviceClass, condition, province }));
+    const [category, deviceClass, condition, province, inspected] = filterKey.split('|');
+    dispatch(getProducts({ category, deviceClass, condition, province, inspected }));
   }, [dispatch, filterKey]);
 
   const onAddToCart = (product) => {
@@ -77,27 +85,34 @@ const ProductList = () => {
         ))}
       </div>
 
-      <div className="row g-2 mb-4" style={{ maxWidth: 720 }}>
-        <div className="col-sm-4">
+      <div className="row g-2 mb-4 align-items-center" style={{ maxWidth: 960 }}>
+        <div className="col-sm-3">
           <select className="form-select form-select-sm" aria-label="Device class"
             value={filters.deviceClass} onChange={e => setFilter('deviceClass', e.target.value)}>
             <option value="">Any device class</option>
             {Object.entries(DEVICE_CLASSES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
         </div>
-        <div className="col-sm-4">
+        <div className="col-sm-3">
           <select className="form-select form-select-sm" aria-label="Condition"
             value={filters.condition} onChange={e => setFilter('condition', e.target.value)}>
             <option value="">Any condition</option>
             {Object.entries(CONDITIONS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
         </div>
-        <div className="col-sm-4">
+        <div className="col-sm-3">
           <select className="form-select form-select-sm" aria-label="Province"
             value={filters.province} onChange={e => setFilter('province', e.target.value)}>
             <option value="">All provinces</option>
             {Object.entries(PROVINCES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
+        </div>
+        <div className="col-sm-3">
+          <div className="form-check mb-0">
+            <input className="form-check-input" type="checkbox" id="filter-inspected"
+              checked={filters.inspected === '1'} onChange={e => setFilter('inspected', e.target.checked ? '1' : '')} />
+            <label className="form-check-label small" htmlFor="filter-inspected">Independently inspected</label>
+          </div>
         </div>
       </div>
 
@@ -110,6 +125,7 @@ const ProductList = () => {
           {visibleProducts.map((product, i) => {
             const soldOut = product.stock < 1;
             const badge = VERIFICATION_BADGES[product.organization?.verificationStatus];
+            const inspection = currentInspection(product);
             return (
               <motion.div
                 key={product._id}
@@ -134,6 +150,11 @@ const ProductList = () => {
                     <div className="d-flex gap-1 flex-wrap mb-2">
                       <span className="badge bg-info text-dark">Class {product.deviceClass}</span>
                       <span className="badge bg-light text-dark border">{CONDITIONS[product.condition]}</span>
+                      {inspection && (
+                        <span className={`badge ${INSPECTION_OUTCOMES[inspection.outcome].className}`}>
+                          {INSPECTION_OUTCOMES[inspection.outcome].label}
+                        </span>
+                      )}
                     </div>
                     <h5 className="card-title mb-1">{product.title}</h5>
                     <p className="text-muted small mb-1">{product.manufacturer} {product.deviceModel}</p>

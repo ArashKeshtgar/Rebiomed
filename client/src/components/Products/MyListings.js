@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { getMyProducts, deleteProduct } from '../../actions/productActions';
-import { formatPrice } from '../../utils/medical';
+import { INSPECTION_OUTCOMES, currentInspection, formatPrice } from '../../utils/medical';
 
 const MyListings = () => {
   const dispatch = useDispatch();
@@ -50,7 +50,16 @@ const MyListings = () => {
                     </p>
                   )}
                   <p className="text-muted small mb-1">{product.category?.name}</p>
-                  <strong className="mb-3">{formatPrice(product.price)}</strong>
+                  <strong className="mb-2">{formatPrice(product.price)}</strong>
+                  <p className="small mb-3">
+                    {currentInspection(product) ? (
+                      <span className={`badge ${INSPECTION_OUTCOMES[product.inspection.outcome].className}`}>
+                        {INSPECTION_OUTCOMES[product.inspection.outcome].label}
+                      </span>
+                    ) : (
+                      <Link to={`/inspections?product=${product._id}`}>Request independent inspection</Link>
+                    )}
+                  </p>
                   <div className="mt-auto d-flex gap-2">
                     <Link to={`/products/${product._id}`} className="btn btn-sm btn-outline-secondary flex-grow-1">
                       View
