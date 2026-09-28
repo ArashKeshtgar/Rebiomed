@@ -130,11 +130,13 @@ const CheckoutForm = () => {
     return <div className="container py-4"><p>Your cart is empty.</p></div>;
   }
 
+  // No REACT_APP_STRIPE_PUBLISHABLE_KEY at build time (client/.env, or the host's env).
   if (!stripePromise) {
     return (
       <div className="container py-4">
-        <p className="text-danger">
-          Stripe is not configured. Set REACT_APP_STRIPE_PUBLISHABLE_KEY in client/.env.
+        <p className="text-muted">
+          Online checkout isn't enabled on this server yet. You can still browse listings, make offers and
+          request inspections.
         </p>
       </div>
     );

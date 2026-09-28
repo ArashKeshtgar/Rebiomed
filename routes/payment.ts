@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import auth from '../middleware/auth';
-import stripe from '../services/stripe';
+import stripe, { requirePayments } from '../services/stripe';
 import { CheckoutError, CURRENCY, createPendingOrder, priceCart } from '../services/checkout';
 
 const router = express.Router();
@@ -9,7 +9,7 @@ const router = express.Router();
 // @desc    Price the cart server-side, create a pending order and a matching PaymentIntent
 // @body    { items: [{ productId, quantity, offerId? }] }
 // @access  Private
-router.post('/create-payment-intent', auth, async (req: Request, res: Response) => {
+router.post('/create-payment-intent', auth, requirePayments, async (req: Request, res: Response) => {
   try {
     const cart = await priceCart(req.body.items, req.user!.id);
     const order = await createPendingOrder(req.user!.id, cart);

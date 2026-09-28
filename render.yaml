@@ -1,0 +1,33 @@
+# Render Blueprint: New > Blueprint in the Render dashboard, pick this repo.
+# The database is MongoDB Atlas (free M0 cluster); paste its connection string
+# into MONGO_URI when Render asks.
+services:
+  - type: web
+    name: rebiomed
+    runtime: node
+    plan: free
+    region: ohio
+    branch: master
+    # Dev dependencies (TypeScript) are needed to compile, even with NODE_ENV=production.
+    buildCommand: npm ci --include=dev && npm run build && npm run build:client
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: REACT_APP_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_CONNECT_WEBHOOK_SECRET
+        sync: false
+      - key: PLATFORM_FEE_BPS
+        value: "800"

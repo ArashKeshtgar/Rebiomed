@@ -1,0 +1,15 @@
+node_modules
+client/node_modules
+client/build
+dist
+.env
+.env.*
+!.env.example
+client/.env
+uploads/*
+private-uploads
+.git
+.github
+.vscode
+.claude
+test

@@ -2,7 +2,9 @@ import './env';
 
 import path from 'path';
 import express from 'express';
+import mongoose from 'mongoose';
 import connectDB from './db';
+import keys from './config/keys';
 
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
@@ -22,6 +24,9 @@ const app = express();
 
 connectDB();
 
+// Behind the hosting platform's load balancer; lets req.ip/req.protocol see the client.
+app.set('trust proxy', 1);
+
 // Stripe signs the raw request body, so the webhook must be mounted before express.json().
 app.use('/api/payment/webhook', webhookRoutes);
 app.use(express.json());
@@ -39,5 +44,26 @@ app.use('/api/payouts', payoutRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/inspections', inspectionRoutes);
+
+// @route   GET /api/health
+// @desc    Liveness/readiness for the hosting platform: 503 until MongoDB is connected
+// @access  Public
+app.get('/api/health', (_req, res) => {
+  const db = mongoose.connection.readyState === 1;
+  res.status(db ? 200 : 503).json({ status: db ? 'ok' : 'starting', db, payments: !!keys.stripeSecretKey });
+});
+
+app.use('/api', (_req, res) => {
+  res.status(404).json({ msg: 'Not found' });
+});
+
+// In production one service hosts both the API and the React build, so the
+// client can call /api on its own origin. Unknown paths get index.html and are
+// routed on the client.
+if (keys.serveClient) {
+  const build = path.join(process.cwd(), 'client', 'build');
+  app.use(express.static(build, { index: false, maxAge: '1h' }));
+  app.get('*', (_req, res) => res.sendFile(path.join(build, 'index.html')));
+}
 
 export default app;
